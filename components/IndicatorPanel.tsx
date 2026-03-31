@@ -26,6 +26,8 @@ export default function IndicatorPanel({ config, onChange }: Props) {
           { key: "rsi", label: "RSI" },
         ] as const).map(({ key, label }) => (
           <button
+            type="button"
+            aria-pressed={config[key]}
             key={key}
             onClick={() => toggle(key)}
             className={`px-2 py-1 text-xs font-mono border transition-colors ${
