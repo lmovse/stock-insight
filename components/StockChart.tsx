@@ -16,11 +16,29 @@ import {
 } from "lightweight-charts";
 import type { KLineData, IndicatorConfig } from "@/lib/types";
 import { calcMA } from "@/lib/indicators";
+import DrawingToolbar, { type DrawingTool } from "./DrawingToolbar";
+import DrawingCanvas from "./DrawingCanvas";
+import { useUser } from "./UserProvider";
 
 interface Props {
   code: string;
   klineData: KLineData[];
   indicators: IndicatorConfig;
+}
+
+interface DrawingData {
+  id?: string;
+  type: "TREND" | "FIBONACCI" | "HORIZONTAL" | "TEXT";
+  data: {
+    startTime?: number;
+    startPrice?: number;
+    endTime?: number;
+    endPrice?: number;
+    time?: number;
+    price?: number;
+    text?: string;
+  };
+  color: string;
 }
 
 export default function StockChart({ code, klineData, indicators }: Props) {
@@ -31,6 +49,10 @@ export default function StockChart({ code, klineData, indicators }: Props) {
   const maSeriesRefs = useRef<Map<number, ISeriesApi<"Line">>>(new Map());
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [crosshairDate, setCrosshairDate] = useState<string>("");
+  const [activeTool, setActiveTool] = useState<DrawingTool>("SELECT");
+  const [drawings, setDrawings] = useState<DrawingData[]>([]);
+  const { user } = useUser();
+  const drawingsLoadedRef = useRef(false);
 
   const initChart = useCallback(() => {
     if (!containerRef.current) return;
@@ -165,8 +187,47 @@ export default function StockChart({ code, klineData, indicators }: Props) {
     chartRef.current?.timeScale().fitContent();
   }, [klineData, indicators]);
 
+  useEffect(() => {
+    if (!chartRef.current || !code || !user) return;
+    if (drawingsLoadedRef.current) return;
+    drawingsLoadedRef.current = true;
+
+    fetch(`/api/drawings?stockCode=${code}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const parsed = data.map((d: any) => ({
+            ...d,
+            data: typeof d.data === "string" ? JSON.parse(d.data) : d.data,
+          }));
+          setDrawings(parsed);
+        }
+      })
+      .catch(() => {});
+  }, [code, user]);
+
+  const handleDrawingComplete = useCallback(
+    async (d: DrawingData) => {
+      if (!user) return;
+      try {
+        const res = await fetch("/api/drawings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stockCode: code, type: d.type, data: d.data, color: d.color }),
+        });
+        const saved = await res.json();
+        setDrawings((prev) => [
+          ...prev,
+          { ...saved, data: typeof saved.data === "string" ? JSON.parse(saved.data) : saved.data },
+        ]);
+      } catch {}
+    },
+    [code, user]
+  );
+
   return (
     <div className="flex flex-col h-full">
+      <DrawingToolbar activeTool={activeTool} onToolChange={setActiveTool} />
       <div className="flex items-center gap-2 mb-2">
         {crosshairDate && (
           <span className="text-xs font-mono text-[var(--accent)] bg-[var(--surface-elevated)] px-2 py-0.5 border border-[var(--border)]">
@@ -187,7 +248,19 @@ export default function StockChart({ code, klineData, indicators }: Props) {
           </button>
         ))}
       </div>
-      <div ref={containerRef} className="flex-1 min-h-0" />
+      <div ref={containerRef} className="flex-1 min-h-0 relative">
+        {chartRef.current && (
+          <DrawingCanvas
+            chart={chartRef.current}
+            tool={activeTool}
+            color="#E53935"
+            user={user}
+            stockCode={code}
+            onDrawingComplete={handleDrawingComplete}
+            drawings={drawings}
+          />
+        )}
+      </div>
     </div>
   );
 }
