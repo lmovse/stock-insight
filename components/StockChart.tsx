@@ -30,11 +30,11 @@ interface DrawingData {
   id?: string;
   type: "TREND" | "FIBONACCI" | "HORIZONTAL" | "TEXT";
   data: {
-    startTime?: number;
+    startTime?: Time;
     startPrice?: number;
-    endTime?: number;
+    endTime?: Time;
     endPrice?: number;
-    time?: number;
+    time?: Time;
     price?: number;
     text?: string;
   };
@@ -252,6 +252,7 @@ export default function StockChart({ code, klineData, indicators }: Props) {
         {chartRef.current && (
           <DrawingCanvas
             chart={chartRef.current}
+            series={candleSeriesRef.current}
             tool={activeTool}
             color="#E53935"
             user={user}

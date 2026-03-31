@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import type { IChartApi, Time } from "lightweight-charts";
+import type { IChartApi, ISeriesApi, SeriesType, Time } from "lightweight-charts";
 import type { DrawingTool } from "./DrawingToolbar";
 import { calcFibonacciLevels } from "@/lib/drawings";
 
@@ -22,6 +22,7 @@ interface DrawingData {
 
 interface Props {
   chart: IChartApi | null;
+  series: ISeriesApi<SeriesType> | null;
   tool: DrawingTool;
   color: string;
   user: { id: string } | null;
@@ -32,6 +33,7 @@ interface Props {
 
 export default function DrawingCanvas({
   chart,
+  series,
   tool,
   color,
   user,
@@ -46,7 +48,7 @@ export default function DrawingCanvas({
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     const chartApi = chart;
-    if (!canvas || !chartApi) return;
+    if (!canvas || !chartApi || !series) return;
 
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width;
@@ -59,14 +61,14 @@ export default function DrawingCanvas({
 
     // Draw existing lines
     drawings.forEach((d) => {
-      drawOnCanvas(ctx, chartApi, d);
+      drawOnCanvas(ctx, chartApi, series, d);
     });
 
     // Draw current in-progress line
     if (drawingRef.current) {
-      drawOnCanvas(ctx, chartApi, drawingRef.current);
+      drawOnCanvas(ctx, chartApi, series, drawingRef.current);
     }
-  }, [chart, drawings]);
+  }, [chart, series, drawings]);
 
   useEffect(() => {
     redraw();
@@ -76,14 +78,15 @@ export default function DrawingCanvas({
     if (!chart || !canvasRef.current) return;
 
     const handleResize = () => redraw();
-    chart.subscribeResize(handleResize);
+    // TypeScript doesn't know about subscribeResize in v5, but it exists at runtime
+    (chart as unknown as { subscribeResize: (fn: () => void) => void }).subscribeResize(handleResize);
 
     return () => {
-      chart.unsubscribeResize(handleResize);
+      (chart as unknown as { unsubscribeResize: (fn: () => void) => void }).unsubscribeResize(handleResize);
     };
   }, [chart, redraw]);
 
-  function drawOnCanvas(ctx: CanvasRenderingContext2D, chartApi: IChartApi, d: DrawingData) {
+  function drawOnCanvas(ctx: CanvasRenderingContext2D, chartApi: IChartApi, seriesApi: ISeriesApi<SeriesType>, d: DrawingData) {
     const ts = chartApi.timeScale();
 
     ctx.strokeStyle = d.color;
@@ -95,9 +98,9 @@ export default function DrawingCanvas({
       if (!startTime || !endTime || startPrice === undefined || endPrice === undefined) return;
 
       const x1 = ts.timeToCoordinate(startTime as Time);
-      const y1 = chartApi.priceScale("").priceToCoordinate(startPrice);
+      const y1 = seriesApi.priceToCoordinate(startPrice);
       const x2 = ts.timeToCoordinate(endTime as Time);
-      const y2 = chartApi.priceScale("").priceToCoordinate(endPrice);
+      const y2 = seriesApi.priceToCoordinate(endPrice);
 
       if (x1 === null || x2 === null || y1 === null || y2 === null) return;
 
@@ -109,7 +112,7 @@ export default function DrawingCanvas({
       if (d.type === "FIBONACCI") {
         const levels = calcFibonacciLevels(startPrice, endPrice);
         levels.forEach((l) => {
-          const y = chartApi.priceScale("").priceToCoordinate(l.price);
+          const y = seriesApi.priceToCoordinate(l.price);
           if (y === null) return;
           ctx.beginPath();
           ctx.moveTo(x1, y);
@@ -133,7 +136,7 @@ export default function DrawingCanvas({
       if (!time || price === undefined) return;
 
       const x = ts.timeToCoordinate(time as Time);
-      const y = chartApi.priceScale("").priceToCoordinate(price);
+      const y = seriesApi.priceToCoordinate(price);
       if (x === null || y === null) return;
 
       ctx.beginPath();
@@ -148,7 +151,7 @@ export default function DrawingCanvas({
       if (!time || price === undefined || !text) return;
 
       const x = ts.timeToCoordinate(time as Time);
-      const y = chartApi.priceScale("").priceToCoordinate(price);
+      const y = seriesApi.priceToCoordinate(price);
       if (x === null || y === null) return;
 
       ctx.fillStyle = d.color;
@@ -158,17 +161,16 @@ export default function DrawingCanvas({
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (tool === "SELECT" || !chart || !user) return;
+      if (tool === "SELECT" || !chart || !series || !user) return;
 
       const rect = canvasRef.current!.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
       const ts = chart.timeScale();
-      const priceScale = chart.priceScale("");
 
       const time = ts.coordinateToTime(x);
-      const price = priceScale.coordinateToPrice(y);
+      const price = series.coordinateToPrice(y);
 
       if (!time || price === null) return;
 
@@ -191,22 +193,21 @@ export default function DrawingCanvas({
         redraw();
       }
     },
-    [tool, chart, user, color, onDrawingComplete, redraw]
+    [tool, chart, series, user, color, onDrawingComplete, redraw]
   );
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!drawingRef.current || !chart) return;
+      if (!drawingRef.current || !chart || !series) return;
 
       const rect = canvasRef.current!.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
       const ts = chart.timeScale();
-      const priceScale = chart.priceScale("");
 
       const time = ts.coordinateToTime(x);
-      const price = priceScale.coordinateToPrice(y);
+      const price = series.coordinateToPrice(y);
 
       if (!time || price === null) return;
 
@@ -221,22 +222,21 @@ export default function DrawingCanvas({
 
       redraw();
     },
-    [chart, redraw]
+    [chart, series, redraw]
   );
 
   const handleMouseUp = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!drawingRef.current || !chart) return;
+      if (!drawingRef.current || !chart || !series) return;
 
       const rect = canvasRef.current!.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
       const ts = chart.timeScale();
-      const priceScale = chart.priceScale("");
 
       const time = ts.coordinateToTime(x);
-      const price = priceScale.coordinateToPrice(y);
+      const price = series.coordinateToPrice(y);
 
       if (!time || price === null) return;
 
@@ -250,7 +250,7 @@ export default function DrawingCanvas({
       };
 
       const startX = ts.timeToCoordinate(drawingRef.current.data.startTime as Time);
-      const startY = priceScale.priceToCoordinate(drawingRef.current.data.startPrice ?? 0);
+      const startY = series.priceToCoordinate(drawingRef.current.data.startPrice ?? 0);
       if (startX !== null && startY !== null) {
         const dist = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
         if (dist < 10) {
@@ -266,10 +266,10 @@ export default function DrawingCanvas({
       startPosRef.current = null;
       redraw();
     },
-    [chart, onDrawingComplete, redraw]
+    [chart, series, onDrawingComplete, redraw]
   );
 
-  if (!chart) return null;
+  if (!chart || !series) return null;
 
   return (
     <canvas

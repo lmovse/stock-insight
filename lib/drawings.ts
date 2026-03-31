@@ -1,20 +1,4 @@
-import type { IChartApi, Time } from "lightweight-charts";
-
-// Convert chart coordinates to pixel position
-export function getPixelPosition(
-  chart: IChartApi,
-  time: Time,
-  price: number
-): { x: number; y: number } | null {
-  const timeScale = chart.timeScale();
-  const priceScale = chart.priceScale("");
-
-  const x = timeScale.timeToCoordinate(time);
-  const y = priceScale.priceToCoordinate(price);
-
-  if (x === null || y === null) return null;
-  return { x, y };
-}
+import type { Time } from "lightweight-charts";
 
 // Calculate Fibonacci retracement levels
 export function calcFibonacciLevels(
