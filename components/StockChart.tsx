@@ -8,6 +8,7 @@ import {
   CandlestickData,
   HistogramData,
   CrosshairMode,
+  Time,
 } from "lightweight-charts";
 import type { KLineData, IndicatorConfig } from "@/lib/types";
 
@@ -95,7 +96,7 @@ export default function StockChart({ code, klineData, indicators }: Props) {
       return;
 
     const candles: CandlestickData[] = klineData.map((d) => ({
-      time: d.time as any,
+      time: d.time as Time,
       open: d.open,
       high: d.high,
       low: d.low,
@@ -103,7 +104,7 @@ export default function StockChart({ code, klineData, indicators }: Props) {
     }));
 
     const volumes: HistogramData[] = klineData.map((d) => ({
-      time: d.time as any,
+      time: d.time as Time,
       value: d.volume,
       color: d.close >= d.open ? "#E5393540" : "#4CAF5040",
     }));
