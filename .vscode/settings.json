@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "Archivo",
         "bashhistory",
         "commandhistory",
         "dbaeumer",
@@ -11,14 +12,18 @@
         "GITSTATUS",
         "HISTFILE",
         "ipsets",
+        "MACD",
         "noall",
         "NOPASSWD",
         "npmjs",
         "npmmirror",
+        "OHLC",
         "POSTROUTING",
         "POWERLEVEL",
         "powerline",
         "procps",
-        "statsig"
+        "statsig",
+        "Tushare",
+        "watchlist"
     ]
 }
