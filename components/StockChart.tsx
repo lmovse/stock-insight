@@ -69,6 +69,7 @@ export default function StockChart({ code, klineData, indicators }: Props) {
 
     // MA line series (up to 4 lines)
     const colors = ["#FFD700", "#FF6B6B", "#4ECDC4", "#A855F7"];
+    maSeriesRefs.current.clear();
     indicators.maPeriods.forEach((p, i) => {
       const s = chart.addLineSeries({
         color: colors[i % colors.length],
