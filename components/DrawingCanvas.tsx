@@ -75,16 +75,17 @@ export default function DrawingCanvas({
   }, [redraw]);
 
   useEffect(() => {
-    if (!chart || !canvasRef.current) return;
+    if (!canvasRef.current) return;
 
-    const handleResize = () => redraw();
-    // TypeScript doesn't know about subscribeResize in v5, but it exists at runtime
-    (chart as unknown as { subscribeResize: (fn: () => void) => void }).subscribeResize(handleResize);
+    const observer = new ResizeObserver(() => {
+      redraw();
+    });
+    observer.observe(canvasRef.current);
 
     return () => {
-      (chart as unknown as { unsubscribeResize: (fn: () => void) => void }).unsubscribeResize(handleResize);
+      observer.disconnect();
     };
-  }, [chart, redraw]);
+  }, [redraw]);
 
   function drawOnCanvas(ctx: CanvasRenderingContext2D, chartApi: IChartApi, seriesApi: ISeriesApi<SeriesType>, d: DrawingData) {
     const ts = chartApi.timeScale();
