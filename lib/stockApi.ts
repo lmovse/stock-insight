@@ -22,10 +22,12 @@ const MOCK_STOCKS: StockInfo[] = [
 function generateMockKLine(basePrice: number, days: number): KLineData[] {
   const data: KLineData[] = [];
   let price = basePrice;
-  const now = Math.floor(Date.now() / 1000);
+  const now = new Date();
 
   for (let i = days; i >= 0; i--) {
-    const time = now - i * 86400;
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const date = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
     const change = (Math.random() - 0.5) * price * 0.05;
     const open = price;
     price = Math.max(price + change, price * 0.9);
@@ -35,7 +37,7 @@ function generateMockKLine(basePrice: number, days: number): KLineData[] {
     const volume = Math.floor(Math.random() * 100000000) + 10000000;
 
     data.push({
-      time,
+      date,
       open: Math.round(open * 100) / 100,
       high: Math.round(high * 100) / 100,
       low: Math.round(low * 100) / 100,

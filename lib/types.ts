@@ -5,12 +5,13 @@ export interface StockInfo {
 }
 
 export interface KLineData {
-  time: number;       // Unix timestamp (seconds)
+  date: number;       // yyyymmdd format (e.g., 20260331)
   open: number;
   high: number;
   low: number;
   close: number;
   volume: number;
+  amount?: number;
 }
 
 export interface IndicatorConfig {
