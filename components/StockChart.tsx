@@ -10,6 +10,9 @@ import {
   LineData,
   CrosshairMode,
   Time,
+  CandlestickSeries,
+  HistogramSeries,
+  LineSeries,
 } from "lightweight-charts";
 import type { KLineData, IndicatorConfig } from "@/lib/types";
 import { calcMA } from "@/lib/indicators";
@@ -54,14 +57,14 @@ export default function StockChart({ code, klineData, indicators }: Props) {
 
     chartRef.current = chart;
 
-    const cs = chart.addCandlestickSeries({
+    const cs = chart.addSeries(CandlestickSeries, {
       upColor: "#E53935", downColor: "#4CAF50",
       borderUpColor: "#E53935", borderDownColor: "#4CAF50",
       wickUpColor: "#E53935", wickDownColor: "#4CAF50",
     });
     candleSeriesRef.current = cs;
 
-    const vs = chart.addHistogramSeries({
+    const vs = chart.addSeries(HistogramSeries, {
       color: "#E5393540", priceFormat: { type: "volume" }, priceScaleId: "",
     });
     vs.priceScale().applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
@@ -71,7 +74,7 @@ export default function StockChart({ code, klineData, indicators }: Props) {
     const colors = ["#FFD700", "#FF6B6B", "#4ECDC4", "#A855F7"];
     maSeriesRefs.current.clear();
     indicators.maPeriods.forEach((p, i) => {
-      const s = chart.addLineSeries({
+      const s = chart.addSeries(LineSeries, {
         color: colors[i % colors.length],
         lineWidth: 1,
         priceLineVisible: false,

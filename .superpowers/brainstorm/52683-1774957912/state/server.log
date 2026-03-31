@@ -3,3 +3,4 @@
 {"source":"user-event","type":"click","text":"A\n    \n      左宽右窄\n      K线图占左侧约 70% 宽度，右侧放自选股列表 + 指标面板 + 持仓。自选股可折叠。","choice":"a","id":null,"timestamp":1774958001678}
 {"type":"screen-added","file":"/Users/zhangguangguang/VSCodeProjects/stock-insight/.superpowers/brainstorm/52683-1774957912/content/accent-color.html"}
 {"source":"user-event","type":"click","text":"D\n    \n      中国红 #E53935\n      A股特色色调，涨红跌绿，贴近国内投资者习惯。\n      \n        \n        \n        A","choice":"d","id":null,"timestamp":1774958036460}
+{"type":"server-stopped","reason":"idle timeout"}
