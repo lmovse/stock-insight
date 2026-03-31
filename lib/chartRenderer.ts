@@ -35,12 +35,53 @@ export class ChartRenderer {
   private candleGap: number = 2;
   private scale: number = 1;
   private scrollOffset: number = 0;
+  private isDragging: boolean = false;
+  private lastMouseX: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas 2D context not available");
     this.ctx = ctx;
+    this.canvas.style.cursor = "crosshair";
+    this.bindEvents();
+  }
+
+  private bindEvents() {
+    this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    this.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this));
+    this.canvas.addEventListener("mouseup", this.handleMouseUp.bind(this));
+    this.canvas.addEventListener("mouseleave", this.handleMouseUp.bind(this));
+    this.canvas.addEventListener("wheel", this.handleWheel.bind(this), { passive: false });
+  }
+
+  private handleMouseDown(e: MouseEvent) {
+    this.isDragging = true;
+    this.lastMouseX = e.clientX;
+    this.canvas.style.cursor = "grabbing";
+  }
+
+  private handleMouseMove(e: MouseEvent) {
+    if (this.isDragging) {
+      const dx = e.clientX - this.lastMouseX;
+      const candleTotal = this.candleWidth + this.candleGap;
+      const offsetDelta = Math.round(dx / candleTotal);
+      if (offsetDelta !== 0) {
+        this.setScrollOffset(this.scrollOffset - offsetDelta);
+        this.lastMouseX = e.clientX;
+      }
+    }
+  }
+
+  private handleMouseUp() {
+    this.isDragging = false;
+    this.canvas.style.cursor = "crosshair";
+  }
+
+  private handleWheel(e: WheelEvent) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    this.setScale(this.scale + delta);
   }
 
   setData(data: KLineData[]) {

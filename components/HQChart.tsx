@@ -77,9 +77,9 @@ export default function HQChart({ code, klineData, indicators }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-[500px]">
       {/* Period selector */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-2 shrink-0">
         {(["日K", "周K", "月K"] as const).map((label) => (
           <button
             key={label}
@@ -91,7 +91,7 @@ export default function HQChart({ code, klineData, indicators }: Props) {
       </div>
 
       {/* Chart container */}
-      <div ref={containerRef} className="flex-1 relative bg-[#1a1a1a] rounded">
+      <div ref={containerRef} className="flex-1 relative bg-[#1a1a1a] rounded min-h-0">
         <canvas
           ref={canvasRef}
           className="w-full h-full"
