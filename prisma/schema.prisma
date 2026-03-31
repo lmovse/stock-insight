@@ -19,6 +19,7 @@ model User {
   positions      Position[]
   trades        Trade[]
   chartConfig   ChartConfig?
+  drawingLines  DrawingLine[]
 }
 
 model WatchlistGroup {
@@ -81,4 +82,17 @@ model ChartConfig {
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   indicators String  // JSON string of IndicatorConfig
   theme     String  @default("dark")
+}
+
+model DrawingLine {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stockCode String
+  type      String   // "TREND" | "FIBONACCI" | "HORIZONTAL" | "TEXT"
+  data      String   // JSON
+  color     String   @default("#E53935")
+  createdAt DateTime @default(now())
+
+  @@index([userId, stockCode])
 }
