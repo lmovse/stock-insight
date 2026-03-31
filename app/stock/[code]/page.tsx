@@ -24,6 +24,7 @@ export default function StockPage() {
   const code = params.code as string;
   const [klineData, setKlineData] = useState<KLineData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [indicators, setIndicators] = useState<IndicatorConfig>(defaultIndicators);
   const [watchlistOpen, setWatchlistOpen] = useState(true);
   const [portfolioOpen, setPortfolioOpen] = useState(true);
@@ -32,9 +33,15 @@ export default function StockPage() {
     if (!code) return;
     setLoading(true);
     fetch(`/api/stocks/${code}/kline?period=daily&count=300`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => { setKlineData(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((e) => {
+        console.error(`[StockPage] Failed to load ${code}:`, e);
+        setLoading(false);
+      });
   }, [code]);
 
   return (
@@ -46,7 +53,7 @@ export default function StockPage() {
           <div className="flex-1 p-3 min-h-0">
             {loading ? (
               <div className="h-full flex items-center justify-center text-[var(--text-muted)] font-mono text-sm">
-                Loading {code}...
+                {error ? `Error: ${error}` : `Loading ${code}...`}
               </div>
             ) : (
               <StockChart code={code} klineData={klineData} indicators={indicators} />
