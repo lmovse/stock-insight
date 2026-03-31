@@ -7,6 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "default-s
 export interface JWTPayload {
   userId: string;
   email: string;
+  [key: string]: unknown;
 }
 
 export async function signJWT(payload: JWTPayload): Promise<string> {
