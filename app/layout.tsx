@@ -3,7 +3,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Stock Insight",
+  title: "股票分析",
   description: "个人股票分析工具",
 };
 

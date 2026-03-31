@@ -15,7 +15,7 @@ export default function IndicatorPanel({ config, onChange }: Props) {
   return (
     <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)]">
       <div className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wide mb-3">
-        Technical Indicators
+        技术指标
       </div>
       <div className="flex flex-wrap gap-2">
         {([

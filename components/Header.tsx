@@ -10,7 +10,7 @@ export default function Header() {
       <Link href="/" className="flex items-center gap-2 shrink-0">
         <div className="w-6 h-6 bg-[var(--accent)]" />
         <span className="font-display font-semibold text-[var(--text-primary)] tracking-wide">
-          STOCK INSIGHT
+          股票分析
         </span>
       </Link>
       <div className="flex-1 flex justify-center">

@@ -53,7 +53,7 @@ export default function StockPage() {
           <div className="flex-1 p-3 min-h-0">
             {loading ? (
               <div className="h-full flex items-center justify-center text-[var(--text-muted)] font-mono text-sm">
-                {error ? `Error: ${error}` : `Loading ${code}...`}
+                {error ? `错误: ${error}` : `加载中 ${code}...`}
               </div>
             ) : (
               <StockChart code={code} klineData={klineData} indicators={indicators} />
@@ -68,7 +68,7 @@ export default function StockPage() {
             onClick={() => setWatchlistOpen(!watchlistOpen)}
             className="w-full px-3 py-2 flex items-center justify-between text-xs font-mono uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text-primary)] border-b border-[var(--border)] transition-colors"
           >
-            Watchlist
+            自选股
             <span>{watchlistOpen ? "−" : "+"}</span>
           </button>
           {watchlistOpen && <WatchlistPanel />}
@@ -77,7 +77,7 @@ export default function StockPage() {
             onClick={() => setPortfolioOpen(!portfolioOpen)}
             className="w-full px-3 py-2 flex items-center justify-between text-xs font-mono uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text-primary)] border-t border-b border-[var(--border)] transition-colors"
           >
-            Portfolio
+            持仓
             <span>{portfolioOpen ? "−" : "+"}</span>
           </button>
           {portfolioOpen && <PortfolioPanel />}
