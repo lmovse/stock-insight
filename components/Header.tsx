@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import StockSearch from "./StockSearch";
-import ThemeToggle from "./ThemeToggle";
+import AuthButtons from "./AuthButtons";
 
 export default function Header() {
   return (
@@ -16,7 +16,7 @@ export default function Header() {
       <div className="flex-1 flex justify-center">
         <StockSearch />
       </div>
-      <ThemeToggle />
+      <AuthButtons />
     </header>
   );
 }
