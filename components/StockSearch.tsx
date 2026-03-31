@@ -18,9 +18,13 @@ export default function StockSearch() {
       setLoading(true);
       try {
         const res = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setResults(data);
         setOpen(true);
+      } catch (e) {
+        console.error("[StockSearch] Failed to search:", e);
+        setResults([]);
       } finally {
         setLoading(false);
       }
