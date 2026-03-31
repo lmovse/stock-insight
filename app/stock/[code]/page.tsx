@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Header from "@/components/Header";
-import StockChart from "@/components/StockChart";
+import HQChart from "@/components/HQChart";
 import IndicatorPanel from "@/components/IndicatorPanel";
 import WatchlistPanel from "@/components/WatchlistPanel";
 import PortfolioPanel from "@/components/PortfolioPanel";
@@ -56,7 +56,7 @@ export default function StockPage() {
                 {error ? `错误: ${error}` : `加载中 ${code}...`}
               </div>
             ) : (
-              <StockChart code={code} klineData={klineData} indicators={indicators} />
+              <HQChart code={code} klineData={klineData} indicators={indicators} />
             )}
           </div>
           <IndicatorPanel config={indicators} onChange={setIndicators} />
