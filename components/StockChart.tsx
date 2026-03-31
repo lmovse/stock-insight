@@ -50,7 +50,17 @@ export default function StockChart({ code, klineData, indicators }: Props) {
         horzLine: { color: "#E53935", width: 1, style: 2 },
       },
       rightPriceScale: { borderColor: "#2A2A2A" },
-      timeScale: { borderColor: "#2A2A2A", timeVisible: true },
+      timeScale: {
+        borderColor: "#2A2A2A",
+        timeVisible: true,
+        tickMarkFormatter: (time: Time) => {
+          const date = new Date(Number(time) * 1000);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          return `${year}年${month}月${day}日`;
+        },
+      },
       width: containerRef.current.clientWidth,
       height: containerRef.current.clientHeight,
     });
