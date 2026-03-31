@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   createChart,
   IChartApi,
   ISeriesApi,
   CandlestickData,
   HistogramData,
+  LineData,
   CrosshairMode,
   Time,
 } from "lightweight-charts";
 import type { KLineData, IndicatorConfig } from "@/lib/types";
+import { calcMA } from "@/lib/indicators";
 
 interface Props {
   code: string;
@@ -23,10 +25,12 @@ export default function StockChart({ code, klineData, indicators }: Props) {
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const maSeriesRefs = useRef<Map<number, ISeriesApi<"Line">>>(new Map());
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
 
-  useEffect(() => {
+  const initChart = useCallback(() => {
     if (!containerRef.current) return;
+    chartRef.current?.remove();
 
     const chart = createChart(containerRef.current, {
       layout: {
@@ -42,36 +46,38 @@ export default function StockChart({ code, klineData, indicators }: Props) {
         vertLine: { color: "#E53935", width: 1, style: 2 },
         horzLine: { color: "#E53935", width: 1, style: 2 },
       },
-      rightPriceScale: {
-        borderColor: "#2A2A2A",
-      },
-      timeScale: {
-        borderColor: "#2A2A2A",
-        timeVisible: true,
-      },
+      rightPriceScale: { borderColor: "#2A2A2A" },
+      timeScale: { borderColor: "#2A2A2A", timeVisible: true },
+      width: containerRef.current.clientWidth,
+      height: containerRef.current.clientHeight,
     });
 
     chartRef.current = chart;
 
-    const candleSeries = chart.addCandlestickSeries({
-      upColor: "#E53935",
-      downColor: "#4CAF50",
-      borderUpColor: "#E53935",
-      borderDownColor: "#4CAF50",
-      wickUpColor: "#E53935",
-      wickDownColor: "#4CAF50",
+    const cs = chart.addCandlestickSeries({
+      upColor: "#E53935", downColor: "#4CAF50",
+      borderUpColor: "#E53935", borderDownColor: "#4CAF50",
+      wickUpColor: "#E53935", wickDownColor: "#4CAF50",
     });
-    candleSeriesRef.current = candleSeries;
+    candleSeriesRef.current = cs;
 
-    const volumeSeries = chart.addHistogramSeries({
-      color: "#E5393540",
-      priceFormat: { type: "volume" },
-      priceScaleId: "",
+    const vs = chart.addHistogramSeries({
+      color: "#E5393540", priceFormat: { type: "volume" }, priceScaleId: "",
     });
-    volumeSeries.priceScale().applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
+    vs.priceScale().applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
+    volumeSeriesRef.current = vs;
+
+    // MA line series (up to 4 lines)
+    const colors = ["#FFD700", "#FF6B6B", "#4ECDC4", "#A855F7"];
+    indicators.maPeriods.forEach((p, i) => {
+      const s = chart.addLineSeries({
+        color: colors[i % colors.length],
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      maSeriesRefs.current.set(p, s);
     });
-    volumeSeriesRef.current = volumeSeries;
 
     const handleResize = () => {
       if (containerRef.current) {
@@ -89,31 +95,44 @@ export default function StockChart({ code, klineData, indicators }: Props) {
       window.removeEventListener("resize", handleResize);
       chart.remove();
     };
-  }, []);
+  }, [indicators.maPeriods]);
+
+  useEffect(() => { initChart(); }, [initChart]);
 
   useEffect(() => {
-    if (!candleSeriesRef.current || !volumeSeriesRef.current || !klineData.length)
-      return;
+    if (!candleSeriesRef.current || !volumeSeriesRef.current || !klineData.length) return;
+
+    const times = klineData.map((d) => d.time as Time);
 
     const candles: CandlestickData[] = klineData.map((d) => ({
       time: d.time as Time,
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close,
+      open: d.open, high: d.high, low: d.low, close: d.close,
     }));
+    candleSeriesRef.current.setData(candles);
 
     const volumes: HistogramData[] = klineData.map((d) => ({
       time: d.time as Time,
       value: d.volume,
       color: d.close >= d.open ? "#E5393540" : "#4CAF5040",
     }));
-
-    candleSeriesRef.current.setData(candles);
     volumeSeriesRef.current.setData(volumes);
 
+    // MA lines
+    if (indicators.ma) {
+      indicators.maPeriods.forEach((p) => {
+        const series = maSeriesRefs.current.get(p);
+        if (!series) return;
+        const maData = calcMA(klineData, p);
+        const lineData: LineData[] = maData.map((v, i) => ({
+          time: times[i],
+          value: v ?? 0,
+        })).filter((d) => d.value !== 0) as LineData[];
+        series.setData(lineData);
+      });
+    }
+
     chartRef.current?.timeScale().fitContent();
-  }, [klineData]);
+  }, [klineData, indicators]);
 
   return (
     <div className="flex flex-col h-full">
