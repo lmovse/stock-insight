@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  watchlists    WatchlistItem[]
+  watchlistGroups WatchlistGroup[]
+  positions      Position[]
+  trades        Trade[]
+  chartConfig   ChartConfig?
+}
+
+model WatchlistGroup {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name    String
+  order   Int    @default(0)
+  items   WatchlistItem[]
+
+  @@index([userId])
+}
+
+model WatchlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId   String?
+  group     WatchlistGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  stockCode String
+  addedAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([groupId])
+}
+
+model Position {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stockCode String
+  shares    Float
+  avgCost   Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trades    Trade[]
+
+  @@index([userId])
+}
+
+model Trade {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positionId String
+  position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  type      String   // "BUY" or "SELL"
+  price     Float
+  shares    Float
+  tradedAt  DateTime
+
+  @@index([userId])
+  @@index([positionId])
+}
+
+model ChartConfig {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  indicators String  // JSON string of IndicatorConfig
+  theme     String  @default("dark")
+}
