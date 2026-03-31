@@ -1,0 +1,33 @@
+<h2>主页面布局，你想要哪种结构？</h2>
+<p class="subtitle">K线图是核心，其他模块如何布局？</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>左宽右窄</h3>
+      <p>K线图占左侧约 70% 宽度，右侧放自选股列表 + 指标面板 + 持仓。自选股可折叠。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>下窄上宽</h3>
+      <p>K线图占上方主体，底部放自选股滚动条 + 持仓概览。图表高度优先。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>标签页切换</h3>
+      <p>顶部标签切换：K线图 / 自选股 / 持仓。一次只显示一个模块，界面最简洁。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>可拖拽面板</h3>
+      <p>所有模块都是可拖拽面板，用户自己定义布局。最灵活但实现成本高。</p>
+    </div>
+  </div>
+</div>

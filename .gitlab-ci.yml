@@ -1,0 +1,8 @@
+include:
+  - project: "devops/ci-template"
+    ref: main
+    file: "templates/.common_next_template.yaml"
+
+deploy-test:
+  script:
+    - echo "Deploying to test environment"

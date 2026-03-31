@@ -1,0 +1,5 @@
+# Dependencies
+node_modules/
+.next
+repo/
+skills/
