@@ -9,7 +9,11 @@ export async function GET(
   try {
     const info = await getStockInfo(code);
     return NextResponse.json(info);
-  } catch {
-    return NextResponse.json({ error: "Stock not found" }, { status: 404 });
+  } catch (e) {
+    console.error(`[stocks/${code}] Failed to fetch stock info:`, e);
+    if (e instanceof Error && e.message.includes("not found")) {
+      return NextResponse.json({ error: "Stock not found" }, { status: 404 });
+    }
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

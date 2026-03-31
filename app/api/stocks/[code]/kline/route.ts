@@ -12,6 +12,7 @@ export async function GET(
     const data = await getKLineData(code, period, count);
     return NextResponse.json(data);
   } catch (e) {
+    console.error(`[stocks/${code}/kline] Failed to fetch K-line data:`, e);
     return NextResponse.json({ error: "Failed to fetch K-line" }, { status: 500 });
   }
 }

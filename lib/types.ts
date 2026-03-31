@@ -1,7 +1,7 @@
 export interface StockInfo {
   code: string;       // "600519"
   name: string;       // "贵州茅台"
-  market: string;     // "sh" | "sz" | "bj"
+  market: "sh" | "sz" | "bj";
 }
 
 export interface KLineData {
