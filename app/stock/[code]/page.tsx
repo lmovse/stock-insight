@@ -59,10 +59,10 @@ export default function StockPage() {
   const isUp = priceChange >= 0;
 
   return (
-    <div className="h-screen flex flex-col bg-[var(--background)] overflow-hidden">
+    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden">
 
-      {/* Stock info strip */}
-      <div className="info-strip flex-shrink-0 px-5 py-3 relative">
+      {/* Stock info strip - sticky */}
+      <div className="info-strip shrink-0 px-5 py-3 relative sticky top-0 z-10 bg-[var(--background)]">
         {/* Left accent bar */}
         <div className="accent-bar absolute left-0 top-3 bottom-3" />
 
@@ -156,7 +156,7 @@ export default function StockPage() {
           </div>
 
           {/* Indicator bar */}
-          <div className="glass-card rounded-xl px-4 py-3">
+          <div className="shrink-0 glass-card rounded-xl px-4 py-3 max-h-[120px] overflow-y-auto">
             <IndicatorPanel config={indicators} onChange={setIndicators} />
           </div>
         </div>
