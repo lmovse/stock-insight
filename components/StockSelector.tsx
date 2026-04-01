@@ -88,7 +88,7 @@ export default function StockSelector({
 
       {/* 搜索结果 */}
       {results.length > 0 && (
-        <div className="mt-2 rounded-lg border border-[var(--border)] overflow-hidden">
+        <div className="mt-2 rounded-lg border border-[var(--border)] overflow-hidden animate-tab">
           {results.map((s) => (
             <button
               key={s.code}

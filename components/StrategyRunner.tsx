@@ -211,7 +211,7 @@ export default function StrategyRunner() {
           </label>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {results.map((r, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--background)]">
+              <div key={i} className="result-item flex items-start gap-3 p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--background)]">
                 <span className="font-mono text-sm shrink-0 text-[var(--text-primary)]">{r.stockCode}</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${
                   r.result === "符合"

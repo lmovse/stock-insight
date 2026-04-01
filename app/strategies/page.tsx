@@ -9,6 +9,7 @@ interface Strategy {
   id: string;
   name: string;
   description: string | null;
+  criteria: string | null;
   prompt: { id: string; name: string };
   createdAt: string;
 }
@@ -46,12 +47,14 @@ export default function StrategiesPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newCriteria, setNewCriteria] = useState("");
   const [newPromptId, setNewPromptId] = useState("");
   const [prompts, setPrompts] = useState<{ id: string; name: string }[]>([]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  const [editCriteria, setEditCriteria] = useState("");
   const [editPromptId, setEditPromptId] = useState("");
 
   const [dialog, setDialog] = useState<DialogContent>(null);
@@ -98,12 +101,13 @@ export default function StrategiesPage() {
     const res = await fetch("/api/strategies", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName, description: newDesc, promptId: newPromptId }),
+      body: JSON.stringify({ name: newName, description: newDesc, criteria: newCriteria, promptId: newPromptId }),
     });
     if (res.ok) {
       setShowNewForm(false);
       setNewName("");
       setNewDesc("");
+      setNewCriteria("");
       fetchStrategies();
     }
   };
@@ -118,6 +122,7 @@ export default function StrategiesPage() {
     setEditingId(s.id);
     setEditName(s.name);
     setEditDesc(s.description || "");
+    setEditCriteria((s as unknown as { criteria?: string }).criteria || "");
     setEditPromptId(s.prompt?.id || "");
   };
 
@@ -126,7 +131,7 @@ export default function StrategiesPage() {
     const res = await fetch(`/api/strategies/${editingId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName, description: editDesc, promptId: editPromptId }),
+      body: JSON.stringify({ name: editName, description: editDesc, criteria: editCriteria, promptId: editPromptId }),
     });
     if (res.ok) {
       setEditingId(null);
@@ -167,7 +172,7 @@ export default function StrategiesPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 gap-4">
+    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 gap-4 animate-page-enter">
       {/* Header */}
       <div className="flex justify-between items-center shrink-0">
         <h1 className="text-xl font-bold text-[var(--text-primary)]">选股策略</h1>
@@ -181,30 +186,49 @@ export default function StrategiesPage() {
 
       {/* 新建表单 */}
       {showNewForm && (
-        <div className="glass-card rounded-xl p-5 shrink-0">
+        <div className="glass-card rounded-xl p-5 shrink-0 form-slide-enter">
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="策略名称"
-              className="px-3 py-2.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-            />
-            <select
-              value={newPromptId}
-              onChange={(e) => setNewPromptId(e.target.value)}
-              className="px-3 py-2.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)]"
-            >
-              {prompts.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略名称</label>
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="输入策略名称"
+                className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">提示词</label>
+              <select
+                value={newPromptId}
+                onChange={(e) => setNewPromptId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)]"
+              >
+                {prompts.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <input
-            value={newDesc}
-            onChange={(e) => setNewDesc(e.target.value)}
-            placeholder="策略描述（可选）"
-            className="w-full px-3 py-2.5 mb-4 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-          />
+          <div className="mb-3">
+            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略描述 <span className="text-[var(--text-muted)] opacity-60">（可选）</span></label>
+            <input
+              value={newDesc}
+              onChange={(e) => setNewDesc(e.target.value)}
+              placeholder="简要描述策略逻辑"
+              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+            />
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略条件 <span className="text-[var(--text-muted)] opacity-60">（支持 Markdown）</span></label>
+            <textarea
+              value={newCriteria}
+              onChange={(e) => setNewCriteria(e.target.value)}
+              placeholder="描述选股条件，如：&#10;1. 均线多头排列（MA5 > MA10 > MA20）&#10;2. 成交量放大至5日均量的1.5倍以上"
+              rows={6}
+              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none leading-relaxed"
+            />
+          </div>
           <div className="flex gap-2">
             <button onClick={handleCreate} className="px-5 py-2 rounded-lg text-sm font-semibold pill-active">创建</button>
             <button onClick={() => setShowNewForm(false)} className="px-4 py-2 rounded-lg text-sm border border-[var(--border)] text-[var(--text-secondary)] hover:bg-white/5 transition-colors">取消</button>
@@ -218,7 +242,7 @@ export default function StrategiesPage() {
           <div key={s.id} className={`glass-card rounded-xl p-4 transition-all duration-300 ${editingId === s.id ? 'border-[var(--accent)]' : ''}`}>
             {editingId === s.id ? (
               /* 编辑表单 */
-              <div>
+              <div className="form-slide-enter overflow-visible">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-semibold text-[var(--text-primary)]">编辑策略</span>
                 </div>
@@ -251,6 +275,16 @@ export default function StrategiesPage() {
                       className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)]"
                     />
                   </div>
+                  <div>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略条件</label>
+                    <textarea
+                      value={editCriteria}
+                      onChange={(e) => setEditCriteria(e.target.value)}
+                      placeholder="支持 Markdown 格式"
+                      rows={6}
+                      className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] resize-none leading-relaxed"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2 mt-4">
                   <button onClick={handleSaveEdit} className="px-5 py-2 rounded-lg text-sm font-semibold pill-active">保存</button>
@@ -268,6 +302,11 @@ export default function StrategiesPage() {
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] mt-1">{s.description || "无描述"}</p>
+                  {s.criteria && (
+                    <div className="mt-2 text-xs text-[var(--text-secondary)] leading-relaxed prose">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.criteria}</ReactMarkdown>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => openRunDialog(s)} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors">
@@ -309,7 +348,7 @@ export default function StrategiesPage() {
         >
           <div
             ref={dialogRef}
-            className="glass-card rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
+            className="glass-card rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-dialog-enter"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Dialog header */}
@@ -375,7 +414,7 @@ export default function StrategiesPage() {
                           </button>
 
                           {isExpanded && (
-                            <div className="mt-4 pt-4 border-t border-[var(--border-subtle)]">
+                            <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] form-slide-enter">
                               {detail ? (
                                 <>
                                   <div className="flex gap-4 mb-4">
@@ -391,7 +430,7 @@ export default function StrategiesPage() {
                                   </div>
                                   <div className="space-y-2 max-h-64 overflow-y-auto">
                                     {detail.results.map((r, i) => (
-                                      <div key={i} className="flex flex-wrap gap-2 p-2 rounded-lg bg-[var(--background)]">
+                                      <div key={i} className="result-item flex flex-wrap gap-2 p-2 rounded-lg bg-[var(--background)]">
                                         <span className="font-mono text-xs shrink-0 text-[var(--text-primary)]">{r.stockCode}</span>
                                         <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
                                           r.result === "符合" ? "bg-green-500/20 text-green-400" :
@@ -400,7 +439,7 @@ export default function StrategiesPage() {
                                         }`}>
                                           {r.result}
                                         </span>
-                                        <div className="w-full text-xs text-[var(--text-muted)] leading-relaxed [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1">
+                                        <div className="w-full text-xs text-[var(--text-muted)] leading-relaxed prose">
                                           {r.reason ? (
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>{r.reason}</ReactMarkdown>
                                           ) : "无"}

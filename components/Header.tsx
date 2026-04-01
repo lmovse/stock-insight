@@ -25,13 +25,21 @@ export default function Header() {
   return (
     <header className="header-bar h-[52px] px-5 flex items-center gap-4">
       <Link href="/" className="flex items-center gap-2 shrink-0 group">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-          style={{ background: 'var(--accent)' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
-        </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="items-center">
+          <defs>
+            <linearGradient id="logoGrad" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="var(--text-primary)" />
+              <stop offset="100%" stopColor="var(--text-muted)" />
+            </linearGradient>
+          </defs>
+          <path d="M3 20V9l6-6 4 4 8-9v16" stroke="url(#logoGrad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#logoShadow)"/>
+          <path d="M3 20h18" stroke="url(#logoGrad)" strokeWidth="1.5" strokeLinecap="round"/>
+          <defs>
+            <filter id="logoShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="var(--text-primary)" floodOpacity="0.4"/>
+            </filter>
+          </defs>
+        </svg>
         <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors">
           StockInsight
         </span>

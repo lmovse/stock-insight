@@ -55,7 +55,7 @@ export default function StockPage() {
   const isUp = priceChange >= 0;
 
   return (
-    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden">
+    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden animate-page-enter">
 
       {/* Stock info strip - sticky */}
       <div className="info-strip shrink-0 px-5 py-3 relative sticky top-0 z-10 bg-[var(--background)]">

@@ -11,7 +11,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, description, promptId } = await req.json();
+  const { name, description, criteria, promptId } = await req.json();
   if (!name || !promptId) {
     return NextResponse.json({ error: "名称和提示词不能为空" }, { status: 400 });
   }
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   const strategy = await prisma.strategy.create({
-    data: { name, description, promptId },
+    data: { name, description, criteria, promptId },
     include: { prompt: true },
   });
 

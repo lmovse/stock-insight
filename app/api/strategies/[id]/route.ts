@@ -20,7 +20,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { name, description, promptId } = await req.json();
+  const { name, description, criteria, promptId } = await req.json();
 
   const existing = await prisma.strategy.findUnique({
     where: { id },
@@ -38,7 +38,7 @@ export async function PUT(
 
   const strategy = await prisma.strategy.update({
     where: { id },
-    data: { name, description, promptId },
+    data: { name, description, criteria, promptId },
     include: { prompt: true },
   });
 

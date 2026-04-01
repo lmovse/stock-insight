@@ -87,7 +87,8 @@ export async function GET(
           const klineText = formatKLineData(klineData);
           console.log(`[stream/${id}] ${stockCode}: klineText preview:`, klineText.slice(0, 200));
 
-          const messages = buildPromptMessages(promptTemplate, stockCode, dateRange, klineText);
+          const criteria = run.strategy.criteria ?? "";
+          const messages = buildPromptMessages(promptTemplate, stockCode, dateRange, klineText, criteria);
 
           // Create AbortController for this AI call
           const abortController = new AbortController();

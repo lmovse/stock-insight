@@ -17,12 +17,14 @@ export function buildPromptMessages(
   promptTemplate: string,
   stockCode: string,
   dateRange: string,
-  klineData: string
+  klineData: string,
+  criteria: string
 ): AIMessage[] {
   const userContent = promptTemplate
     .replace("{{stockCode}}", stockCode)
     .replace("{{dateRange}}", dateRange)
-    .replace("{{klineData}}", klineData);
+    .replace("{{klineData}}", klineData)
+    .replace("{{criteria}}", criteria);
 
   return [
     { role: "system", content: userContent },

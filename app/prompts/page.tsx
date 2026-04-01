@@ -91,7 +91,7 @@ export default function PromptsPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 gap-4">
+    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 gap-4 animate-page-enter">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
@@ -108,32 +108,41 @@ export default function PromptsPage() {
 
       {/* 新建表单 */}
       {showNewForm && (
-        <div className="glass-card rounded-xl p-5 shrink-0">
+        <div className="glass-card rounded-xl p-5 shrink-0 form-slide-enter">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-semibold text-[var(--text-primary)]">新建提示词</span>
-            <button onClick={() => setShowNewForm(false)} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              取消
-            </button>
           </div>
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="提示词名称"
-            className="w-full px-3 py-2.5 mb-3 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-          />
-          <textarea
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            className="w-full px-3 py-2.5 mb-4 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono resize-none leading-relaxed"
-            rows={10}
-            placeholder="提示词内容..."
-          />
-          <div className="flex gap-2">
+          <div className="mb-3">
+            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">提示词名称</label>
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="输入提示词名称"
+              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">提示词内容</label>
+            <textarea
+              value={newContent}
+              onChange={(e) => setNewContent(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] font-mono resize-none leading-relaxed"
+              rows={10}
+              placeholder={`提示词内容，支持 {{变量名}} 占位符...`}
+            />
+          </div>
+          <div className="flex gap-2 mt-4">
             <button
               onClick={handleCreate}
               className="px-5 py-2 rounded-lg text-sm font-semibold pill-active"
             >
               创建
+            </button>
+            <button
+              onClick={() => setShowNewForm(false)}
+              className="px-4 py-2 rounded-lg text-sm border border-[var(--border)] text-[var(--text-secondary)] hover:bg-white/5 transition-colors"
+            >
+              取消
             </button>
           </div>
         </div>
@@ -145,28 +154,28 @@ export default function PromptsPage() {
           <div key={p.id} className={`glass-card rounded-xl p-4 edit-card transition-all duration-300 ${editingId === p.id ? 'border-[var(--accent)]' : ''}`}>
             {editingId === p.id ? (
               /* 编辑表单 */
-              <div className="edit-form-inner">
+              <div className="form-slide-enter">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-semibold text-[var(--text-primary)]">编辑提示词</span>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">名称</label>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">提示词名称</label>
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       placeholder="输入提示词名称"
-                      className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                      className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">内容</label>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">提示词内容</label>
                     <textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono resize-none leading-relaxed"
+                      placeholder={`提示词内容，支持 {{变量名}} 占位符...`}
                       rows={10}
-                      placeholder="输入提示词内容..."
+                      className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono resize-none leading-relaxed"
                     />
                   </div>
                 </div>
