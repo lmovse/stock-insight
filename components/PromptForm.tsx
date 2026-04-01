@@ -63,7 +63,7 @@ export default function PromptForm({ initial, onSuccess }: PromptFormProps) {
         />
       </div>
       <div>
-        <label className="block text-sm mb-1">内容（支持 {{变量}} 占位符）</label>
+        <label className="block text-sm mb-1">内容（支持 {"{{变量}}"} 占位符）</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
