@@ -50,7 +50,7 @@ const MACD_RATIO = 0.15;
 const KDJ_RATIO = 0.09;
 const RSI_RATIO = 0.09;
 const PADDING_LEFT = 40;
-const PADDING_RIGHT = 60; // Y axis width
+const PADDING_RIGHT = 80; // Y axis width (increased for price labels)
 
 export class ChartRenderer {
   private canvas: HTMLCanvasElement;
@@ -211,7 +211,13 @@ export class ChartRenderer {
   }
 
   resetScroll() {
-    this.scrollOffset = 0;
+    // Scroll to end (most recent data) instead of beginning
+    const totalWidth = this.cssWidth - PADDING_RIGHT;
+    if (totalWidth <= 0 || this.data.length === 0) return;
+    const candleTotal = this.candleWidth + this.candleGap;
+    // Use ceil so the last candle body is fully within the chart area
+    const visibleCount = Math.ceil((totalWidth - PADDING_LEFT) / candleTotal);
+    this.scrollOffset = Math.max(0, this.data.length - visibleCount);
     this.calculateVisibleRange();
     this.render();
   }
@@ -226,12 +232,15 @@ export class ChartRenderer {
     const totalWidth = this.cssWidth - PADDING_RIGHT;
     if (totalWidth <= 0) return;
     const candleTotal = this.candleWidth + this.candleGap;
-    const visibleCount = Math.floor(totalWidth / candleTotal);
+    // Use ceil so the last candle body is fully visible (not cut off by clip)
+    // Subtract 1 because candle center at PADDING_LEFT + (visibleCount-1)*candleTotal
+    // must have its right edge <= chartRight
+    const visibleCount = Math.ceil((totalWidth - PADDING_LEFT) / candleTotal);
     const maxOffset = Math.max(0, this.data.length - visibleCount);
     const offset = Math.max(0, Math.min(maxOffset, this.scrollOffset));
     this.visibleRange = {
       start: offset,
-      end: Math.min(this.data.length, offset + visibleCount + 1),
+      end: Math.min(this.data.length, offset + visibleCount),
     };
   }
 
@@ -370,12 +379,9 @@ export class ChartRenderer {
 
   private drawCandles(visibleData: KLineData[], start: number, candleTotal: number, minPrice: number, maxPrice: number, areaY: number, areaH: number) {
     const priceRange = maxPrice - minPrice || 1;
-    const chartRight = this.cssWidth - PADDING_RIGHT;
 
     visibleData.forEach((d, i) => {
       const x = PADDING_LEFT + i * candleTotal + this.candleWidth / 2;
-      // Skip candles whose left edge is already past the Y axis
-      if (PADDING_LEFT + i * candleTotal >= chartRight) return;
 
       const isUp = d.close >= d.open;
       const color = isUp ? this.config.upColor : this.config.downColor;

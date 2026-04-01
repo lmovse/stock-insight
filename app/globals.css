@@ -142,12 +142,11 @@ button, a, input { transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1); }
    GLASS CARD — main frosted glass surface
    ============================================ */
 .glass-card {
-  background: var(--surface);
+  background: var(--surface-solid);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
 }
 
 /* Solid card — for areas that need solid bg */
@@ -246,4 +245,132 @@ button, a, input { transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1); }
 .toggle-btn:hover {
   background: var(--surface-hover);
   border-color: var(--accent);
+}
+
+/* ============================================
+   EDIT MODE ANIMATIONS
+   ============================================ */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.98); }
+}
+
+.edit-form-enter {
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.edit-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.edit-card:hover {
+  border-color: var(--accent);
+}
+
+.edit-form-inner {
+  animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ============================================
+   CARD HOVER EFFECTS
+   ============================================ */
+@keyframes softGlow {
+  0%, 100% { box-shadow: var(--shadow-lg); }
+  50% { box-shadow: 0 0 20px var(--accent-muted), var(--shadow-lg); }
+}
+
+.card-interactive {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================
+   PAGE ENTER ANIMATIONS
+   ============================================ */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: pageEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-stagger > * {
+  opacity: 0;
+  animation: pageEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.animate-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.animate-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.animate-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.animate-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.animate-stagger > *:nth-child(6) { animation-delay: 250ms; }
+.animate-stagger > *:nth-child(7) { animation-delay: 300ms; }
+.animate-stagger > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ============================================
+   LOADING SPINNER
+   ============================================ */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================
+   PULSE DOT
+   ============================================ */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.9); }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
 }

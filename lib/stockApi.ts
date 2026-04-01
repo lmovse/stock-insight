@@ -48,14 +48,15 @@ export async function getKLineData(
   count: number = 300
 ): Promise<KLineData[]> {
   const tsCode = codeToTsCode(code);
+  // Fetch most recent records first (desc), then reverse to get chronological order for chart
   const candles = await prisma.dailyCandle.findMany({
     where: { tsCode },
-    orderBy: { tradeDate: "asc" },
+    orderBy: { tradeDate: "desc" },
     take: period === "daily" ? count : count * 7,
   });
 
   if (period === "daily") {
-    return candles.map((c) => ({
+    return candles.reverse().map((c) => ({
       date: parseInt(c.tradeDate),
       open: c.open,
       high: c.high,
@@ -95,6 +96,8 @@ export async function getKLineData(
 
   const result: KLineData[] = [];
   grouped.forEach((bars, key) => {
+    // Sort bars chronologically (ascending by tradeDate) regardless of candle fetch order
+    bars.sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
     result.push({
       date: parseInt(key),
       open: bars[0].open,

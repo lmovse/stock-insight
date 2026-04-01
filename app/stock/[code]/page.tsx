@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import HQChart from "@/components/HQChart";
 import IndicatorPanel from "@/components/IndicatorPanel";
-import WatchlistPanel from "@/components/WatchlistPanel";
-import PortfolioPanel from "@/components/PortfolioPanel";
 import type { KLineData, IndicatorConfig, StockInfo } from "@/lib/types";
 
 const defaultIndicators: IndicatorConfig = {
@@ -26,8 +24,6 @@ export default function StockPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [indicators, setIndicators] = useState<IndicatorConfig>(defaultIndicators);
-  const [sidebarTab, setSidebarTab] = useState<'watchlist' | 'portfolio'>('watchlist');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
 
   useEffect(() => {
@@ -114,91 +110,49 @@ export default function StockPage() {
       </div>
 
       {/* Main area */}
-      <main className="flex-1 flex min-h-0 relative">
-        {/* Left: Chart + Indicators */}
-        <div className="flex-1 flex flex-col min-w-0 p-4 pr-0 gap-3">
-          {/* Chart */}
-          <div className="flex-1 rounded-2xl overflow-hidden flex flex-col"
-            style={{ background: 'var(--surface-solid, var(--surface))', border: '1px solid var(--border-subtle)' }}
-          >
-            {/* Period selector */}
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border-subtle)] shrink-0">
-              {(["daily", "weekly", "monthly"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1 text-xs font-mono uppercase tracking-wide border transition-colors rounded-lg ${
-                    period === p
-                      ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                      : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
-                  }`}
-                >
-                  {p === "daily" ? "日K" : p === "weekly" ? "周K" : "月K"}
-                </button>
-              ))}
-            </div>
-            {loading ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-9 h-9 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
-                  <span className="text-sm text-[var(--text-muted)]">加载中 {code}...</span>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="h-full flex items-center justify-center text-[var(--text-muted)]">
-                错误: {error}
-              </div>
-            ) : (
-              <div className="flex-1 min-h-0">
-                <HQChart code={code} klineData={klineData} indicators={indicators} />
-              </div>
-            )}
-          </div>
-
-          {/* Indicator bar */}
-          <div className="shrink-0 glass-card rounded-xl px-4 py-3 max-h-[120px] overflow-y-auto">
-            <IndicatorPanel config={indicators} onChange={setIndicators} />
-          </div>
-        </div>
-
-        {/* Right: Sidebar */}
-        <div
-          className={`flex-shrink-0 flex flex-col gap-3 p-4 transition-all duration-300 ${
-            sidebarOpen ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none overflow-hidden"
-          }`}
+      <main className="flex-1 flex flex-col min-h-0 p-4 gap-3">
+        {/* Chart */}
+        <div className="flex-1 rounded-2xl overflow-hidden flex flex-col"
+          style={{ background: 'var(--surface-solid, var(--surface))', border: '1px solid var(--border-subtle)' }}
         >
-          {/* Tab switcher */}
-          <div className="glass-raised rounded-xl p-1 flex gap-1">
-            {(['watchlist', 'portfolio'] as const).map((tab) => (
+          {/* Period selector */}
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border-subtle)] shrink-0">
+            {(["daily", "weekly", "monthly"] as const).map((p) => (
               <button
-                key={tab}
-                onClick={() => setSidebarTab(tab)}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  sidebarTab === tab ? 'pill-active' : 'pill-inactive'
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1 text-xs font-mono uppercase tracking-wide border transition-colors rounded-lg ${
+                  period === p
+                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
                 }`}
               >
-                {tab === 'watchlist' ? '自选股' : '持仓'}
+                {p === "daily" ? "日K" : p === "weekly" ? "周K" : "月K"}
               </button>
             ))}
           </div>
-
-          {/* Panel */}
-          <div className="flex-1 glass-card overflow-hidden flex flex-col">
-            <div className="flex-1 overflow-y-auto">
-              {sidebarTab === 'watchlist' ? <WatchlistPanel compact /> : <PortfolioPanel compact />}
+          {loading ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-9 h-9 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+                <span className="text-sm text-[var(--text-muted)]">加载中 {code}...</span>
+              </div>
             </div>
-          </div>
+          ) : error ? (
+            <div className="h-full flex items-center justify-center text-[var(--text-muted)]">
+              错误: {error}
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0">
+              <HQChart code={code} klineData={klineData} indicators={indicators} />
+            </div>
+          )}
         </div>
 
-        {/* Toggle */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`toggle-btn absolute top-1/2 -translate-y-1/2 w-6 h-12 rounded-xl flex items-center justify-center text-[var(--text-secondary)] transition-all ${
-            sidebarOpen ? "right-[308px]" : "right-4"
-          }`}
-        >
-          {sidebarOpen ? "›" : "‹"}
-        </button>
+        {/* Indicator bar */}
+        <div className="shrink-0 glass-card rounded-xl px-4 py-3 max-h-[120px] overflow-y-auto">
+          <IndicatorPanel config={indicators} onChange={setIndicators} />
+        </div>
       </main>
     </div>
   );

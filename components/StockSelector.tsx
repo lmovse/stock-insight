@@ -80,7 +80,7 @@ export default function StockSelector({
         />
         <button
           onClick={handleSearch}
-          className="px-4 py-2 rounded-lg text-sm border border-[var(--border)] hover:bg-white/5 transition-colors"
+          className="px-4 py-2 rounded-lg text-sm border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
         >
           搜索
         </button>

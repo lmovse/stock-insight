@@ -21,8 +21,12 @@ export default function StrategyRunner() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [selectedStrategyIds, setSelectedStrategyIds] = useState<string[]>([]);
   const [stockCodes, setStockCodes] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 5);
+    return d.toISOString().split("T")[0];
+  });
+  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
   const [dataConfig, setDataConfig] = useState({ kline: true });
 
   const [status, setStatus] = useState<RunStatus>("idle");
@@ -113,9 +117,7 @@ export default function StrategyRunner() {
               key={s.id}
               onClick={() => toggleStrategy(s.id)}
               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-                selectedStrategyIds.includes(s.id)
-                  ? "border-accent bg-accent/20 text-accent"
-                  : "border-[var(--border)] text-[var(--text-secondary)] hover:border-accent/50"
+                selectedStrategyIds.includes(s.id) ? "pill-active" : "pill-inactive"
               }`}
             >
               {s.name}
@@ -145,14 +147,14 @@ export default function StrategyRunner() {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-foreground"
+            className="flex-1 px-3 py-2 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)]"
           />
           <span className="text-[var(--text-muted)] self-center">至</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-foreground"
+            className="flex-1 px-3 py-2 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)]"
           />
         </div>
       </div>
@@ -169,8 +171,7 @@ export default function StrategyRunner() {
             <button
               onClick={handleRun}
               disabled={selectedStrategyIds.length === 0 || stockCodes.length === 0}
-              className="px-6 py-2.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
-              style={{ background: "var(--accent)", color: "black" }}
+              className="px-6 py-2.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 pill-active"
             >
               开始运行
             </button>
@@ -210,8 +211,8 @@ export default function StrategyRunner() {
           </label>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {results.map((r, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-[var(--background)]">
-                <span className="font-mono text-sm shrink-0">{r.stockCode}</span>
+              <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--background)]">
+                <span className="font-mono text-sm shrink-0 text-[var(--text-primary)]">{r.stockCode}</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${
                   r.result === "符合"
                     ? "bg-green-500/20 text-green-400"

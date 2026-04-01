@@ -20,9 +20,6 @@ model User {
   trades        Trade[]
   chartConfig   ChartConfig?
   drawingLines  DrawingLine[]
-  strategies    Strategy[]
-  prompts       Prompt[]
-  strategyRuns  StrategyRun[]
 }
 
 model WatchlistGroup {
@@ -172,8 +169,7 @@ model SyncLog {
 
 model Strategy {
   id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?
   name        String
   description String?
   promptId    String
@@ -188,8 +184,7 @@ model Strategy {
 
 model Prompt {
   id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
   name      String
   content   String
   createdAt DateTime @default(now())
@@ -202,8 +197,7 @@ model Prompt {
 
 model StrategyRun {
   id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?
   strategyId  String
   stockCodes  String
   startDate   String

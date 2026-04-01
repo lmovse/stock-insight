@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { callAI, buildPromptMessages, formatKLineData } from "@/lib/ai";
-import { getKLineData } from "@/lib/stockApi";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "未登录" }, { status: 401 });
-  }
-
   const { id } = await params;
 
-  const run = await prisma.strategyRun.findFirst({
-    where: { id, userId: user.id },
+  const run = await prisma.strategyRun.findUnique({
+    where: { id },
     include: { strategy: { include: { prompt: true } } },
   });
   if (!run) {
@@ -69,14 +62,30 @@ export async function GET(
         send("progress", { done, total, currentStock: stockCode });
 
         try {
-          // Get K-line data
-          const allData = await getKLineData(stockCode, "daily", 300);
+          // Get K-line data via HTTP API (same as stock page)
+          const apiUrl = `${req.nextUrl.origin}/api/stocks/${stockCode}/kline?period=daily&count=300`;
+          const apiRes = await fetch(apiUrl);
+          if (!apiRes.ok) throw new Error(`K-line API failed: ${apiRes.status}`);
+          const allData = await apiRes.json();
+          console.log(`[stream/${id}] ${stockCode}: API returned ${allData.length} records`);
 
           const start = parseInt(run.startDate.replace(/-/g, ""));
           const end = parseInt(run.endDate.replace(/-/g, ""));
 
           const klineData = allData.filter((d: { date: number }) => d.date >= start && d.date <= end);
+          console.log(`[stream/${id}] ${stockCode}: filtered ${klineData.length} records in range ${start}-${end}`);
+          if (klineData.length === 0) {
+            console.warn(`[stream/${id}] ${stockCode}: no data in range ${start}-${end}, skipping AI call`);
+            await prisma.strategyRunResult.create({
+              data: { runId: id, stockCode, result: "错误", reason: `指定区间(${run.startDate}~${run.endDate})内无K线数据，数据库最早已期: ${allData[0]?.date}` },
+            });
+            send("result", { stockCode, result: "错误", reason: `指定区间无数据` });
+            done++;
+            send("progress", { done, total, currentStock: stockCode });
+            continue;
+          }
           const klineText = formatKLineData(klineData);
+          console.log(`[stream/${id}] ${stockCode}: klineText preview:`, klineText.slice(0, 200));
 
           const messages = buildPromptMessages(promptTemplate, stockCode, dateRange, klineText);
 

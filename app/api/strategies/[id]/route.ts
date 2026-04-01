@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
-
   const { id } = await params;
-  const strategy = await prisma.strategy.findFirst({
-    where: { id, userId: user.id },
+  const strategy = await prisma.strategy.findUnique({
+    where: { id },
     include: { prompt: true },
   });
 
@@ -23,20 +19,17 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
-
   const { id } = await params;
   const { name, description, promptId } = await req.json();
 
-  const existing = await prisma.strategy.findFirst({
-    where: { id, userId: user.id },
+  const existing = await prisma.strategy.findUnique({
+    where: { id },
   });
   if (!existing) return NextResponse.json({ error: "不存在" }, { status: 404 });
 
   if (promptId && promptId !== existing.promptId) {
-    const prompt = await prisma.prompt.findFirst({
-      where: { id: promptId, userId: user.id },
+    const prompt = await prisma.prompt.findUnique({
+      where: { id: promptId },
     });
     if (!prompt) {
       return NextResponse.json({ error: "提示词不存在" }, { status: 400 });
@@ -56,13 +49,10 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
-
   const { id } = await params;
 
-  const existing = await prisma.strategy.findFirst({
-    where: { id, userId: user.id },
+  const existing = await prisma.strategy.findUnique({
+    where: { id },
     include: { runs: true },
   });
   if (!existing) return NextResponse.json({ error: "不存在" }, { status: 404 });

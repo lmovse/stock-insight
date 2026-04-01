@@ -9,8 +9,6 @@ import ThemeToggle from "./ThemeToggle";
 const navLinks = [
   { href: "/stock/600519", label: "行情" },
   { href: "/strategies", label: "策略" },
-  { href: "/strategies/run", label: "运行" },
-  { href: "/strategies/runs", label: "历史" },
   { href: "/prompts", label: "提示词" },
 ];
 
