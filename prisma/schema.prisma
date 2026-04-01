@@ -20,6 +20,9 @@ model User {
   trades        Trade[]
   chartConfig   ChartConfig?
   drawingLines  DrawingLine[]
+  strategies    Strategy[]
+  prompts       Prompt[]
+  strategyRuns  StrategyRun[]
 }
 
 model WatchlistGroup {
@@ -165,4 +168,69 @@ model SyncLog {
   startedAt  DateTime @default(now())
   finishedAt DateTime?
   @@index([jobName])
+}
+
+model Strategy {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  promptId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  prompt      Prompt        @relation(fields: [promptId], references: [id])
+  runs        StrategyRun[]
+
+  @@index([userId])
+}
+
+model Prompt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  strategies Strategy[]
+
+  @@index([userId])
+}
+
+model StrategyRun {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  strategyId  String
+  stockCodes  String
+  startDate   String
+  endDate     String
+  dataConfig  String   @default("{\"kline\":true}")
+  status      String   @default("pending")
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  strategy    Strategy            @relation(fields: [strategyId], references: [id])
+  results     StrategyRunResult[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model StrategyRunResult {
+  id          String   @id @default(cuid())
+  runId       String
+  stockCode   String
+  result      String
+  reason      String?
+  rawResponse String?
+  executedAt  DateTime @default(now())
+
+  run         StrategyRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
 }
