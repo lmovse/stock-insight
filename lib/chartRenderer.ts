@@ -758,4 +758,43 @@ export class ChartRenderer {
     if (index < 0 || index >= this.data.length) return null;
     return this.data[index];
   }
+
+  getIndicatorValuesAt(index: number) {
+    const result: Record<string, number | null> = {};
+
+    if (this.settings.ma) {
+      this.settings.maPeriods.forEach((period) => {
+        const ma = this.getMA(period);
+        result[`MA${period}`] = ma[index];
+      });
+    }
+
+    if (this.settings.macd) {
+      const macd = this.getMACD();
+      result["DIF"] = macd.dif[index];
+      result["DEA"] = macd.dea[index];
+      result["MACD"] = macd.macd[index];
+    }
+
+    if (this.settings.kdj) {
+      const kdj = this.getKDJ();
+      result["K"] = kdj.k[index];
+      result["D"] = kdj.d[index];
+      result["J"] = kdj.j[index];
+    }
+
+    if (this.settings.rsi) {
+      const rsi = this.getRSI();
+      result["RSI"] = rsi[index];
+    }
+
+    if (this.settings.boll) {
+      const boll = this.getBOLL();
+      result["BOLL-U"] = boll.upper[index];
+      result["BOLL-M"] = boll.middle[index];
+      result["BOLL-L"] = boll.lower[index];
+    }
+
+    return result;
+  }
 }

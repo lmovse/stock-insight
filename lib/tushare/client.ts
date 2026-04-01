@@ -3,7 +3,7 @@ import axios from 'axios';
 import type { TushareResponse } from './types.js';
 
 const BASE_URL = 'https://api.tushare.pro';
-const REQUEST_INTERVAL = 140; // ms between requests (leaves 20ms buffer under 500/min limit)
+const REQUEST_INTERVAL = 1200; // ms between requests (50/min limit)
 
 let lastRequestTime = 0;
 
