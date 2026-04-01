@@ -18,6 +18,7 @@
         "npmjs",
         "npmmirror",
         "OHLC",
+        "OHLCV",
         "POSTROUTING",
         "POWERLEVEL",
         "powerline",

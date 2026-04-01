@@ -1,11 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import StockSearch from "./StockSearch";
 import AuthButtons from "./AuthButtons";
 import ThemeToggle from "./ThemeToggle";
 
+const navLinks = [
+  { href: "/stock/600519", label: "行情" },
+  { href: "/strategies", label: "策略" },
+  { href: "/strategies/run", label: "运行" },
+  { href: "/strategies/runs", label: "历史" },
+  { href: "/prompts", label: "提示词" },
+];
+
 export default function Header() {
+  const pathname = usePathname();
+
+  const isActive = (href: string) => {
+    if (href === "/stock/600519") {
+      return pathname.startsWith("/stock");
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
     <header className="header-bar h-[52px] px-5 flex items-center gap-4">
       <Link href="/" className="flex items-center gap-2 shrink-0 group">
@@ -25,19 +43,23 @@ export default function Header() {
         <StockSearch />
       </div>
 
-      <div className="flex items-center gap-4">
-        <Link href="/strategies" className="text-sm text-gray-400 hover:text-white transition-colors">
-          策略
-        </Link>
-        <Link href="/strategies/run" className="text-sm text-gray-400 hover:text-white transition-colors">
-          运行
-        </Link>
-        <Link href="/strategies/runs" className="text-sm text-gray-400 hover:text-white transition-colors">
-          历史
-        </Link>
-        <Link href="/prompts" className="text-sm text-gray-400 hover:text-white transition-colors">
-          提示词
-        </Link>
+      <div className="flex items-center gap-1">
+        {navLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              isActive(link.href)
+                ? "bg-accent/20 text-accent font-medium"
+                : "text-gray-400 hover:text-white hover:bg-gray-800"
+            }`}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
         <ThemeToggle />
         <AuthButtons />
       </div>

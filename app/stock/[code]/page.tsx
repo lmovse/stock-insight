@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import Header from "@/components/Header";
 import HQChart from "@/components/HQChart";
 import IndicatorPanel from "@/components/IndicatorPanel";
 import WatchlistPanel from "@/components/WatchlistPanel";
@@ -61,7 +60,6 @@ export default function StockPage() {
 
   return (
     <div className="h-screen flex flex-col bg-[var(--background)] overflow-hidden">
-      <Header />
 
       {/* Stock info strip */}
       <div className="info-strip flex-shrink-0 px-5 py-3 relative">

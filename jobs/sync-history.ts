@@ -10,6 +10,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const prisma = new PrismaClient();
+
+// CUID generator (matches Prisma's @default(cuid()))
+function cuid(): string {
+  const timestamp = Math.floor(Date.now() / 1000).toString(36);
+  const random = Math.random().toString(36).substring(2, 10);
+  const counter = Math.random().toString(36).substring(2, 6);
+  return `c${timestamp}${random}${counter}`;
+}
 const CSV_DIR = path.join(process.cwd(), 'data', 'daily');
 
 async function main() {
@@ -97,7 +105,9 @@ async function phase2Import() {
     const tsCode = file.replace('.csv', '');
     const filePath = path.join(CSV_DIR, file);
 
-    process.stdout.write(`[${i + 1}/${files.length}] ${tsCode}... `);
+    if (i % 100 === 0 || i === files.length - 1) {
+      console.log(`[${i + 1}/${files.length}] ${tsCode}...`);
+    }
 
     try {
       const content = fs.readFileSync(filePath, 'utf8');
@@ -109,6 +119,7 @@ async function phase2Import() {
       }
 
       const records: {
+        id: string;
         tsCode: string;
         tradeDate: string;
         open: number;
@@ -123,6 +134,7 @@ async function phase2Import() {
         const cols = lines[j].split(',');
         if (cols.length < 7) continue;
         records.push({
+          id: cuid(),
           tsCode: cols[0],
           tradeDate: parseTradeDate(cols[1]),
           open: Number(cols[2]),
@@ -134,13 +146,22 @@ async function phase2Import() {
         });
       }
 
-      // 批量 upsert
-      for (const r of records) {
-        await prisma.dailyCandle.upsert({
-          where: { tsCode_tradeDate: { tsCode: r.tsCode, tradeDate: r.tradeDate } },
-          create: r,
-          update: { open: r.open, high: r.high, low: r.low, close: r.close, vol: r.vol, amount: r.amount },
-        });
+      // 批量 upsert：每只股票一条 SQL，一次性写入
+      if (records.length > 0) {
+        const values = records.map(r =>
+          `('${r.id}','${r.tsCode}','${r.tradeDate}',${r.open},${r.high},${r.low},${r.close},${r.vol},${r.amount})`
+        ).join(',');
+        await prisma.$executeRawUnsafe(`
+          INSERT INTO DailyCandle (id, tsCode, tradeDate, open, high, low, close, vol, amount)
+          VALUES ${values}
+          ON CONFLICT (tsCode, tradeDate) DO UPDATE SET
+            open = excluded.open,
+            high = excluded.high,
+            low = excluded.low,
+            close = excluded.close,
+            vol = excluded.vol,
+            amount = excluded.amount
+        `);
       }
 
       console.log(`${records.length} 条`);

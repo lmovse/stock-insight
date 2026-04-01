@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UserProvider } from "@/components/UserProvider";
+import Header from "@/components/Header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,7 +34,12 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <UserProvider>{children}</UserProvider>
+          <UserProvider>
+            <div className="sticky top-0 z-50">
+              <Header />
+            </div>
+            {children}
+          </UserProvider>
         </ThemeProvider>
       </body>
     </html>
