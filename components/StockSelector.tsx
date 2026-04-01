@@ -54,49 +54,65 @@ export default function StockSelector({
 
   return (
     <div>
-      <label className="block text-sm mb-1">选择股票</label>
-      <div className="flex flex-wrap gap-2 mb-2">
+      {/* 已选股票标签 */}
+      <div className="flex flex-wrap gap-2 mb-3">
         {value.map((code) => (
-          <span key={code} className="px-2 py-1 bg-gray-700 rounded text-sm flex items-center gap-1">
+          <span
+            key={code}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-mono"
+            style={{ background: "var(--accent)", color: "black" }}
+          >
             {code}
-            <button onClick={() => removeStock(code)} className="text-gray-400 hover:text-white">×</button>
+            <button onClick={() => removeStock(code)} className="hover:opacity-70">×</button>
           </span>
         ))}
+        {value.length === 0 && <span className="text-xs text-[var(--text-muted)]">未选择股票</span>}
       </div>
+
+      {/* 搜索框 */}
       <div className="flex gap-2">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSearch())}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           placeholder="搜索股票代码或名称"
-          className="flex-1 p-2 border rounded bg-background text-foreground"
+          className="flex-1 px-3 py-2 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-foreground"
         />
-        <button onClick={handleSearch} className="px-4 py-2 border rounded">搜索</button>
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2 rounded-lg text-sm border border-[var(--border)] hover:bg-white/5 transition-colors"
+        >
+          搜索
+        </button>
       </div>
+
+      {/* 搜索结果 */}
       {results.length > 0 && (
-        <div className="mt-2 border rounded bg-gray-800 max-h-40 overflow-y-auto">
+        <div className="mt-2 rounded-lg border border-[var(--border)] overflow-hidden">
           {results.map((s) => (
             <button
               key={s.code}
               onClick={() => addStock(s)}
-              className="w-full text-left px-3 py-2 hover:bg-gray-700 flex justify-between"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 flex justify-between items-center"
             >
               <span>{s.name} ({s.code})</span>
-              <span className="text-gray-400 text-sm">{s.market.toUpperCase()}</span>
+              <span className="text-xs text-[var(--text-muted)]">{s.market.toUpperCase()}</span>
             </button>
           ))}
         </div>
       )}
+
+      {/* 自选股快捷选择 */}
       {watchlist.length > 0 && (
         <div className="mt-3">
-          <div className="text-sm text-gray-400 mb-1">自选股</div>
+          <p className="text-xs text-[var(--text-muted)] mb-2">自选股</p>
           <div className="flex flex-wrap gap-1">
             {watchlist.map((s) => (
               <button
                 key={s.code}
                 onClick={() => addStock(s)}
                 disabled={value.includes(s.code)}
-                className="px-2 py-1 text-xs border rounded hover:bg-gray-700 disabled:opacity-50"
+                className="px-2 py-1 text-xs rounded border border-[var(--border)] hover:bg-white/5 disabled:opacity-30 transition-colors"
               >
                 {s.code}
               </button>
