@@ -2,22 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// In-memory cancel flags (keyed by run id)
-// In production, use Redis or DB flag
-const cancelFlags = new Set<string>();
-
-export function setCancelFlag(taskId: string) {
-  cancelFlags.add(taskId);
-}
-
-export function isCancelled(taskId: string): boolean {
-  return cancelFlags.has(taskId);
-}
-
-export function clearCancelFlag(taskId: string) {
-  cancelFlags.delete(taskId);
-}
-
+// Cancel mechanism: uses DB status flag instead of in-memory Set
+// to support multi-worker deployments
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
@@ -32,14 +18,11 @@ export async function POST(
   });
   if (!run) return NextResponse.json({ error: "运行不存在" }, { status: 404 });
 
-  setCancelFlag(taskId);
-
-  if (run.status === "running") {
-    await prisma.strategyRun.update({
-      where: { id: taskId },
-      data: { status: "cancelled", finishedAt: new Date() },
-    });
-  }
+  // Update status to cancelled in DB - SSE handler polls this
+  await prisma.strategyRun.update({
+    where: { id: taskId },
+    data: { status: "cancelled", finishedAt: new Date() },
+  });
 
   return NextResponse.json({ success: true });
 }

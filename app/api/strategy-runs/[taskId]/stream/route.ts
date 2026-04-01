@@ -3,7 +3,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { callAI, buildPromptMessages, formatKLineData } from "@/lib/ai";
 import { getKLineData } from "@/lib/stockApi";
-import { setCancelFlag, isCancelled, clearCancelFlag } from "../../cancel/route";
 
 export async function GET(
   req: NextRequest,
@@ -51,8 +50,18 @@ export async function GET(
 
       let done = 0;
 
+      // Check if cancelled via DB status
+      const checkCancelled = async (): Promise<boolean> => {
+        const r = await prisma.strategyRun.findUnique({
+          where: { id: taskId },
+          select: { status: true },
+        });
+        return r?.status === "cancelled";
+      };
+
       for (const stockCode of stockCodes) {
-        if (isCancelled(taskId)) {
+        // Check cancellation before starting each stock
+        if (await checkCancelled()) {
           send("done", { status: "cancelled", summary: `已取消，${done}/${total} 支完成` });
           break;
         }
@@ -60,14 +69,7 @@ export async function GET(
         send("progress", { done, total, currentStock: stockCode });
 
         try {
-          // Import codeToTsCode dynamically to avoid circular dependency
-          const { default: stockApi } = await import("@/lib/stockApi");
-          const codeToTsCode = (code: string): string => {
-            const c = code.startsWith("0") || code.startsWith("3") ? "SZ" : code.startsWith("4") || code.startsWith("8") ? "BJ" : "SH";
-            return `${code}.${c}`;
-          };
-
-          const tsCode = codeToTsCode(stockCode);
+          // Get K-line data
           const allData = await getKLineData(stockCode, "daily", 300);
 
           const start = parseInt(run.startDate.replace(/-/g, ""));
@@ -78,21 +80,43 @@ export async function GET(
 
           const messages = buildPromptMessages(promptTemplate, stockCode, dateRange, klineText);
 
-          const aiResponse = await callAI(messages, aiOptions);
+          // Create AbortController for this AI call
+          const abortController = new AbortController();
 
-          const parsed = parseAIResponse(aiResponse.content);
+          // Poll for cancellation during AI call (every 2 seconds)
+          const pollCancelled = setInterval(async () => {
+            if (await checkCancelled()) {
+              abortController.abort();
+            }
+          }, 2000);
 
-          await prisma.strategyRunResult.create({
-            data: {
-              runId: taskId,
-              stockCode,
-              result: parsed.result,
-              reason: parsed.reason,
-              rawResponse: aiResponse.content,
-            },
-          });
+          try {
+            const aiResponse = await callAI(messages, aiOptions, abortController.signal);
+            clearInterval(pollCancelled);
 
-          send("result", { stockCode, result: parsed.result, reason: parsed.reason });
+            const parsed = parseAIResponse(aiResponse.content);
+
+            await prisma.strategyRunResult.create({
+              data: {
+                runId: taskId,
+                stockCode,
+                result: parsed.result,
+                reason: parsed.reason,
+                rawResponse: aiResponse.content,
+              },
+            });
+
+            send("result", { stockCode, result: parsed.result, reason: parsed.reason });
+          } catch (err) {
+            clearInterval(pollCancelled);
+
+            // Check if it was aborted
+            if (err instanceof Error && err.name === "AbortError") {
+              send("done", { status: "cancelled", summary: `已取消，${done}/${total} 支完成` });
+              break;
+            }
+            throw err;
+          }
 
           done++;
           send("progress", { done, total, currentStock: stockCode });
@@ -114,15 +138,16 @@ export async function GET(
         }
       }
 
-      if (!isCancelled(taskId)) {
+      // Final status update
+      const finalStatus = await checkCancelled() ? "cancelled" : "completed";
+      if (finalStatus === "completed") {
         await prisma.strategyRun.update({
           where: { id: taskId },
           data: { status: "completed", finishedAt: new Date() },
         });
-        send("done", { status: "completed", summary: `完成，${done}/${total} 支` });
       }
+      send("done", { status: finalStatus, summary: `完成，${done}/${total} 支` });
 
-      clearCancelFlag(taskId);
       controller.close();
     },
   });

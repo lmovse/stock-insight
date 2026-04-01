@@ -36,30 +36,43 @@ export function buildPromptMessages(
 export async function callAI(
   messages: AIMessage[],
   options: AIOptions,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  timeoutMs: number = 60000
 ): Promise<AIResponse> {
   const url = `${options.baseURL}/chat/completions`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${options.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: options.model,
-      messages,
-    }),
-    signal,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`AI call failed: ${response.status} ${error}`);
+  // If an external signal is provided, chain it
+  if (signal) {
+    signal.addEventListener("abort", () => controller.abort());
   }
 
-  const data = await response.json();
-  return { content: data.choices?.[0]?.message?.content ?? "" };
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${options.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: options.model,
+        messages,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`AI call failed: ${response.status} ${error}`);
+    }
+
+    const data = await response.json();
+    return { content: data.choices?.[0]?.message?.content ?? "" };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export function formatKLineData(
