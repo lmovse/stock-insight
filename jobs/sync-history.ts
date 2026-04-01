@@ -6,7 +6,6 @@
 
 import { PrismaClient } from '@prisma/client';
 import { tushareGet, parseTradeDate, withRetry } from '../lib/tushare/client.js';
-import type { DailyItem } from '../lib/tushare/types.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -59,7 +58,7 @@ async function phase1Fetch() {
 
     try {
       const items = await withRetry(() =>
-        tushareGet<DailyItem>('daily', { ts_code: tsCode }, 'ts_code,trade_date,open,high,low,close,vol,amount')
+        tushareGet<string>('daily', { ts_code: tsCode }, 'ts_code,trade_date,open,high,low,close,vol,amount')
       );
 
       if (!items || items.length === 0) {
@@ -72,7 +71,7 @@ async function phase1Fetch() {
 
       // 写入CSV
       const header = 'ts_code,trade_date,open,high,low,close,vol,amount\n';
-      const rows = items.map((item: string[]) => item.join(',')).join('\n');
+      const rows = items.map((item) => item.join(',')).join('\n');
       fs.writeFileSync(csvFile, header + rows + '\n');
       console.log(`${items.length} 条`);
       fetched++;

@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import { tushareGet, rowsToObjects, TushareError, parseTradeDate, withRetry } from './client.js';
 import type { DailyItem, StockBasicItem, IndexBasicItem, IndexDailyItem } from './types.js';
+import { toPinyin } from '@/lib/stockApi';
 
 const prisma = new PrismaClient();
 
@@ -80,6 +81,7 @@ export async function syncMairuiStockList() {
           tsCode: s.dm,
           symbol,
           name: s.mc.trim(),
+          pinyin: toPinyin(s.mc.trim()),
           market: suffix,
           area: null,
           industry: null,
@@ -88,6 +90,7 @@ export async function syncMairuiStockList() {
         },
         update: {
           name: s.mc.trim(),
+          pinyin: toPinyin(s.mc.trim()),
           market: suffix,
         },
       });
@@ -129,6 +132,7 @@ export async function syncStockBasics() {
           tsCode: r.ts_code,
           symbol: r.symbol,
           name: r.name,
+          pinyin: toPinyin(r.name),
           area: r.area || null,
           industry: r.industry || null,
           market: r.market,
@@ -138,6 +142,7 @@ export async function syncStockBasics() {
         update: {
           symbol: r.symbol,
           name: r.name,
+          pinyin: toPinyin(r.name),
           area: r.area || null,
           industry: r.industry || null,
         },

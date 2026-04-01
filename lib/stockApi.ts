@@ -1,5 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import type { StockInfo, KLineData } from "./types";
+import { default as pinyin } from "pinyin";
+
+// STYLE_NORMAL = 0 (no tones)
+export function toPinyin(name: string): string {
+  return (pinyin(name, { style: 0 }) as string[][])
+    .flat()
+    .join("")
+    .toLowerCase();
+}
 
 function codeToTsCode(code: string): string {
   const c = code.startsWith("0") || code.startsWith("3") ? "SZ" : code.startsWith("4") || code.startsWith("8") ? "BJ" : "SH";
@@ -13,11 +22,15 @@ function tsCodeToCode(tsCode: string): { code: string; market: "sh" | "sz" | "bj
 }
 
 export async function searchStocks(query: string): Promise<StockInfo[]> {
+  const queryPinyin = toPinyin(query);
+  const pinyinCondition = queryPinyin ? [{ pinyin: { contains: queryPinyin } }] : [];
+
   const stocks = await prisma.stockBasic.findMany({
     where: {
       OR: [
         { name: { contains: query } },
         { symbol: { contains: query } },
+        ...pinyinCondition,
       ],
     },
     take: 20,
@@ -38,7 +51,6 @@ export async function getKLineData(
   const candles = await prisma.dailyCandle.findMany({
     where: { tsCode },
     orderBy: { tradeDate: "asc" },
-    // Fetch enough daily data to aggregate into the requested period count
     take: period === "daily" ? count : count * 7,
   });
 
@@ -64,9 +76,8 @@ export async function getKLineData(
 
     let key: string;
     if (period === "weekly") {
-      // ISO week: get the Monday of the week
       const date = new Date(parseInt(y), parseInt(m) - 1, d);
-      const day = date.getDay(); // 0=Sun, 1=Mon, ...
+      const day = date.getDay();
       const diffToMon = day === 0 ? -6 : 1 - day;
       const monday = new Date(date);
       monday.setDate(d + diffToMon);
@@ -75,7 +86,6 @@ export async function getKLineData(
       const wd = String(monday.getDate()).padStart(2, "0");
       key = `${wy}${wm}${wd}`;
     } else {
-      // monthly: first day of month
       key = `${y}${m}01`;
     }
 

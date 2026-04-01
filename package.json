@@ -1,5 +1,5 @@
 {
-  "name": "skills",
+  "name": "stock-insight",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -21,6 +21,7 @@
     "jszip": "^3.10.1",
     "next": "16.1.6",
     "node-cron": "^4.2.1",
+    "pinyin": "^4.0.0",
     "prism-react-renderer": "^2.4.1",
     "prisma": "^6.19.2",
     "react": "19.2.3",

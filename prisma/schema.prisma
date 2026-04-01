@@ -101,6 +101,7 @@ model StockBasic {
   tsCode    String @id
   symbol    String
   name      String
+  pinyin    String @default("")
   area      String?
   industry  String?
   market    String
@@ -109,6 +110,7 @@ model StockBasic {
   updatedAt DateTime @updatedAt
   @@index([symbol])
   @@index([market])
+  @@index([pinyin])
 }
 
 model DailyCandle {
