@@ -193,7 +193,7 @@ export default function HQChart({ code, klineData, indicators }: Props) {
                   {Object.entries(indValues).filter(([k]) => k.startsWith('MA')).map(([k, v]) => (
                     <div key={k} className="flex items-center justify-between gap-4">
                       <span className="text-[var(--text-secondary)] text-xs">{k}</span>
-                      <span className="font-mono font-medium text-xs">{v !== null ? (v as number).toFixed(2) : '-'}</span>
+                      <span className="font-mono font-medium text-xs">{v != null ? (v as number).toFixed(2) : '-'}</span>
                     </div>
                   ))}
                 </div>
