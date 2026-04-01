@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-/* eslint-disable react-hooks/set-state-in-effect -- mounted state is a common pattern for hydration */
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -13,52 +12,56 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Read initial theme before hydration to prevent flash
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'system';
+  return (localStorage.getItem('theme') as Theme) || 'system';
+}
+
+function getSystemTheme(): 'dark' | 'light' {
+  if (typeof window === 'undefined') return 'dark';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function resolveTheme(theme: Theme): 'dark' | 'light' {
+  return theme === 'system' ? getSystemTheme() : theme;
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system');
-  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('dark');
-  const [mounted, setMounted] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const resolvedTheme = resolveTheme(theme);
 
-  // Initialize theme on mount (after hydration)
+  // Read theme from localStorage only after hydration to avoid mismatch
   useEffect(() => {
-    setMounted(true);
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
-    if (savedTheme) {
-      setThemeState(savedTheme);
-    }
+    setThemeState(getInitialTheme());
+    setHydrated(true);
   }, []);
 
+  // Set data-theme attribute - only after hydration to avoid overriding blocking script
   useEffect(() => {
-    if (!mounted) return;
+    if (!hydrated) return;
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+  }, [resolvedTheme, hydrated]);
 
+  useEffect(() => {
+    if (!hydrated) return;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-    const updateResolvedTheme = () => {
-      let resolved: 'dark' | 'light';
+    const listener = () => {
       if (theme === 'system') {
-        resolved = mediaQuery.matches ? 'dark' : 'light';
-      } else {
-        resolved = theme;
-      }
-      setResolvedTheme(resolved);
-
-      if (resolved === 'light') {
-        document.documentElement.setAttribute('data-theme', 'light');
-      } else {
-        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.setAttribute('data-theme', resolveTheme('system'));
       }
     };
 
-    updateResolvedTheme();
-
-    const listener = () => updateResolvedTheme();
     mediaQuery.addEventListener('change', listener);
-
     return () => mediaQuery.removeEventListener('change', listener);
-  }, [theme, mounted]);
+  }, [theme, hydrated]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
+    document.documentElement.setAttribute('data-theme', resolveTheme(newTheme));
   };
 
   return (

@@ -96,3 +96,71 @@ model DrawingLine {
 
   @@index([userId, stockCode])
 }
+
+model StockBasic {
+  tsCode    String @id
+  symbol    String
+  name      String
+  area      String?
+  industry  String?
+  market    String
+  listDate  String?
+  delistDate String?
+  updatedAt DateTime @updatedAt
+  @@index([symbol])
+  @@index([market])
+}
+
+model DailyCandle {
+  id        String @id @default(cuid())
+  tsCode    String
+  tradeDate String
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  vol       Float
+  amount    Float?
+  turnrate  Float?
+  pe        Float?
+  ps        Float?
+  pcf       Float?
+  marketCap Float?
+  floatCap  Float?
+  @@unique([tsCode, tradeDate])
+  @@index([tsCode])
+  @@index([tradeDate])
+}
+
+model IndexBasic {
+  tsCode   String @id
+  name     String
+  fullname String?
+  market   String
+  count    Int?
+  updatedAt DateTime @updatedAt
+}
+
+model IndexDaily {
+  id        String @id @default(cuid())
+  tsCode    String
+  tradeDate String
+  close     Float
+  vol       Float?
+  amount    Float?
+  @@unique([tsCode, tradeDate])
+  @@index([tsCode])
+  @@index([tradeDate])
+}
+
+model SyncLog {
+  jobName    String @id
+  status     String
+  total      Int @default(0)
+  inserted   Int @default(0)
+  updated    Int @default(0)
+  errorMsg   String?
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+  @@index([jobName])
+}

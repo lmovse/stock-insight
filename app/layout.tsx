@@ -13,8 +13,24 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Blocking script to prevent theme flash - runs before React hydration
+  const themeScript = `
+    (function() {
+      try {
+        var theme = localStorage.getItem('theme') || 'system';
+        var resolved = theme === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : theme;
+        document.documentElement.setAttribute('data-theme', resolved);
+      } catch (e) {}
+    })();
+  `;
+
   return (
     <html lang="zh" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <ThemeProvider>
           <UserProvider>{children}</UserProvider>

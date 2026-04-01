@@ -1,4 +1,4 @@
-// lib/chartRenderer.ts
+import { calcMA, calcMACD, calcKDJ, calcBOLL, calcRSI } from "./indicators";
 
 export interface KLineData {
   date: number;      // yyyymmdd format
@@ -18,6 +18,15 @@ export interface ChartConfig {
   maColors: string[];  // [MA5, MA10, MA20, MA30, MA60]
 }
 
+export interface IndicatorSettings {
+  ma: boolean;
+  maPeriods: number[];
+  macd: boolean;
+  kdj: boolean;
+  boll: boolean;
+  rsi: boolean;
+}
+
 export const DEFAULT_CONFIG: ChartConfig = {
   background: "#1a1a1a",
   gridColor: "#2a2a2a",
@@ -25,6 +34,23 @@ export const DEFAULT_CONFIG: ChartConfig = {
   downColor: "#4caf50",
   maColors: ["#ffffff", "#ffff00", "#cc66ff", "#66ff56", "#cc9966"],
 };
+
+export const LIGHT_CONFIG: ChartConfig = {
+  background: "#f7f8fa",
+  gridColor: "#e8e8ec",
+  upColor: "#e53935",
+  downColor: "#10b981",
+  maColors: ["#333333", "#d4a017", "#9333ea", "#22c55e", "#c2410c"],
+};
+
+// Layout ratios
+const MAIN_CHART_RATIO = 0.55;
+const VOLUME_RATIO = 0.12;
+const MACD_RATIO = 0.15;
+const KDJ_RATIO = 0.09;
+const RSI_RATIO = 0.09;
+const PADDING_LEFT = 40;
+const PADDING_RIGHT = 60; // Y axis width
 
 export class ChartRenderer {
   private canvas: HTMLCanvasElement;
@@ -37,6 +63,26 @@ export class ChartRenderer {
   private scrollOffset: number = 0;
   private isDragging: boolean = false;
   private lastMouseX: number = 0;
+  private cssWidth: number = 0;
+  private cssHeight: number = 0;
+  private crosshairX: number | null = null;
+  private crosshairY: number | null = null;
+  private config: ChartConfig = { ...DEFAULT_CONFIG };
+  private settings: IndicatorSettings = {
+    ma: true,
+    maPeriods: [5, 10, 20, 60],
+    macd: true,
+    kdj: false,
+    boll: false,
+    rsi: false,
+  };
+
+  // Cached calculations
+  private maCache: Map<number, (number | null)[]> = new Map();
+  private macdCache: { dif: number[]; dea: number[]; macd: number[] } | null = null;
+  private kdjCache: { k: number[]; d: number[]; j: number[] } | null = null;
+  private bollCache: { middle: (number | null)[]; upper: (number | null)[]; lower: (number | null)[] } | null = null;
+  private rsiCache: (number | null)[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -86,8 +132,69 @@ export class ChartRenderer {
 
   setData(data: KLineData[]) {
     this.data = data;
+    this.invalidateCache();
     this.calculateVisibleRange();
     this.render();
+  }
+
+  setSettings(settings: Partial<IndicatorSettings>) {
+    this.settings = { ...this.settings, ...settings };
+    this.invalidateCache();
+    this.render();
+  }
+
+  setTheme(theme: "dark" | "light") {
+    this.config = theme === "light" ? { ...LIGHT_CONFIG } : { ...DEFAULT_CONFIG };
+    this.render();
+  }
+
+  setCrosshair(x: number | null, y: number | null) {
+    this.crosshairX = x;
+    this.crosshairY = y;
+    this.render();
+  }
+
+  private invalidateCache() {
+    this.maCache.clear();
+    this.macdCache = null;
+    this.kdjCache = null;
+    this.bollCache = null;
+    this.rsiCache = [];
+  }
+
+  private getMA(period: number): (number | null)[] {
+    if (!this.maCache.has(period)) {
+      this.maCache.set(period, calcMA(this.data, period));
+    }
+    return this.maCache.get(period)!;
+  }
+
+  private getMACD() {
+    if (!this.macdCache) {
+      this.macdCache = calcMACD(this.data);
+    }
+    return this.macdCache;
+  }
+
+  private getKDJ() {
+    if (!this.kdjCache) {
+      this.kdjCache = calcKDJ(this.data);
+    }
+    return this.kdjCache;
+  }
+
+  private getBOLL() {
+    if (!this.bollCache) {
+      this.bollCache = calcBOLL(this.data);
+    }
+    return this.bollCache;
+  }
+
+  private getRSI() {
+    if (this.rsiCache.length === 0) {
+      this.rsiCache = calcRSI(this.data);
+    }
+    return this.rsiCache;
   }
 
   setScale(scale: number) {
@@ -103,6 +210,12 @@ export class ChartRenderer {
     this.render();
   }
 
+  resetScroll() {
+    this.scrollOffset = 0;
+    this.calculateVisibleRange();
+    this.render();
+  }
+
   private calculateCandleWidth() {
     const baseWidth = 8;
     this.candleWidth = baseWidth * this.scale;
@@ -110,8 +223,8 @@ export class ChartRenderer {
   }
 
   private calculateVisibleRange() {
-    const totalWidth = this.canvas.width;
-    if (totalWidth === 0) return;
+    const totalWidth = this.cssWidth - PADDING_RIGHT;
+    if (totalWidth <= 0) return;
     const candleTotal = this.candleWidth + this.candleGap;
     const visibleCount = Math.floor(totalWidth / candleTotal);
     const maxOffset = Math.max(0, this.data.length - visibleCount);
@@ -122,71 +235,157 @@ export class ChartRenderer {
     };
   }
 
+  private getDrawingAreas(): { main: { y: number; h: number }; volume: { y: number; h: number }; macd: { y: number; h: number }; kdj: { y: number; h: number }; rsi: { y: number; h: number } } {
+    const height = this.cssHeight;
+    const topPadding = 80;
+    const main = { y: topPadding, h: Math.floor(height * MAIN_CHART_RATIO) - topPadding };
+    const volume = { y: main.y + main.h, h: Math.floor(height * VOLUME_RATIO) };
+    const macd = { y: volume.y + volume.h, h: Math.floor(height * MACD_RATIO) };
+    const kdj = { y: macd.y + macd.h, h: Math.floor(height * KDJ_RATIO) };
+    const rsiY = kdj.y + kdj.h;
+    const rsi = { y: rsiY, h: height - rsiY };
+    return { main, volume, macd, kdj, rsi };
+  }
+
   private render() {
     if (!this.ctx) return;
-    const { width, height } = this.canvas;
+    const width = this.cssWidth;
+    const height = this.cssHeight;
     if (width === 0 || height === 0) return;
-    this.ctx.clearRect(0, 0, width, height);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Background
-    this.ctx.fillStyle = DEFAULT_CONFIG.background;
+    this.ctx.fillStyle = this.config.background;
     this.ctx.fillRect(0, 0, width, height);
-
-    // Grid
-    this.drawGrid();
 
     if (this.data.length === 0) return;
 
-    // K-lines
-    this.drawCandles();
+    // Clip all chart content to the area before Y axis labels
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.rect(0, 0, this.cssWidth - PADDING_RIGHT, this.cssHeight);
+    this.ctx.clip();
 
-    // MA lines
-    this.drawMALines();
-  }
-
-  private drawGrid() {
-    const { width, height } = this.canvas;
-    this.ctx.strokeStyle = DEFAULT_CONFIG.gridColor;
-    this.ctx.lineWidth = 0.5;
-
-    // Horizontal grid lines (5 lines)
-    for (let i = 0; i <= 4; i++) {
-      const y = (height / 4) * i;
-      this.ctx.beginPath();
-      this.ctx.moveTo(0, y);
-      this.ctx.lineTo(width, y);
-      this.ctx.stroke();
-    }
-  }
-
-  private drawCandles() {
+    const areas = this.getDrawingAreas();
     const { start, end } = this.visibleRange;
     const visibleData = this.data.slice(start, end);
-    if (visibleData.length === 0) return;
-    const { width, height } = this.canvas;
     const candleTotal = this.candleWidth + this.candleGap;
 
-    // Calculate price range
+    // Draw grid for each area
+    this.drawGrid(areas.main.y, areas.main.h);
+    if (this.settings.ma || this.settings.boll) {
+      this.drawGrid(areas.volume.y, areas.volume.h);
+    }
+    if (this.settings.macd) {
+      this.drawGrid(areas.macd.y, areas.macd.h);
+    }
+    if (this.settings.kdj) {
+      this.drawGrid(areas.kdj.y, areas.kdj.h);
+    }
+    if (this.settings.rsi) {
+      this.drawGrid(areas.rsi.y, areas.rsi.h);
+    }
+
+    // Calculate price range for main chart with padding
     let minPrice = Infinity, maxPrice = -Infinity;
     visibleData.forEach((d) => {
       minPrice = Math.min(minPrice, d.low);
       maxPrice = Math.max(maxPrice, d.high);
     });
+    // Add 5% padding to price range to avoid candles touching edges
+    const pricePadding = (maxPrice - minPrice) * 0.05;
+    minPrice = minPrice - pricePadding;
+    maxPrice = maxPrice + pricePadding;
+
+    // Draw main chart elements
+    this.drawCandles(visibleData, start, candleTotal, minPrice, maxPrice, areas.main.y, areas.main.h);
+
+    if (this.settings.ma) {
+      this.drawMALines(visibleData, start, candleTotal, minPrice, maxPrice, areas.main.y, areas.main.h);
+    }
+
+    if (this.settings.boll) {
+      this.drawBOLL(visibleData, start, candleTotal, minPrice, maxPrice, areas.main.y, areas.main.h);
+    }
+
+    // Draw volume
+    this.drawVolume(visibleData, start, candleTotal, areas.volume.y, areas.volume.h);
+
+    // Draw MACD
+    if (this.settings.macd) {
+      this.drawMACD(start, candleTotal, areas.macd.y, areas.macd.h);
+    }
+
+    // Draw KDJ
+    if (this.settings.kdj) {
+      this.drawKDJ(start, candleTotal, areas.kdj.y, areas.kdj.h);
+    }
+
+    // Draw RSI
+    if (this.settings.rsi) {
+      this.drawRSI(start, candleTotal, areas.rsi.y, areas.rsi.h);
+    }
+
+    // End chart area clip — axes and crosshair draw beyond it
+    this.ctx.restore();
+
+    // Draw axes
+    this.drawPriceAxis(minPrice, maxPrice, areas.main.y, areas.main.h);
+    this.drawTimeAxis(visibleData, start, candleTotal);
+
+    // Draw separator lines
+    this.drawSeparator(areas.volume.y - 1);
+    if (this.settings.macd) this.drawSeparator(areas.macd.y - 1);
+    if (this.settings.kdj) this.drawSeparator(areas.kdj.y - 1);
+
+    // Draw crosshair
+    if (this.crosshairX !== null) {
+      this.drawCrosshair(areas);
+    }
+  }
+
+  private drawGrid(y: number, h: number) {
+    const width = this.cssWidth - PADDING_RIGHT;
+    this.ctx.strokeStyle = this.config.gridColor;
+    this.ctx.lineWidth = 0.5;
+
+    for (let i = 0; i <= 4; i++) {
+      const yPos = y + (h / 4) * i;
+      this.ctx.beginPath();
+      this.ctx.moveTo(PADDING_LEFT, yPos);
+      this.ctx.lineTo(width, yPos);
+      this.ctx.stroke();
+    }
+  }
+
+  private drawSeparator(y: number) {
+    const width = this.cssWidth - PADDING_RIGHT;
+    this.ctx.strokeStyle = this.config.gridColor;
+    this.ctx.lineWidth = 1;
+    this.ctx.beginPath();
+    this.ctx.moveTo(PADDING_LEFT, y);
+    this.ctx.lineTo(width, y);
+    this.ctx.stroke();
+  }
+
+  private drawCandles(visibleData: KLineData[], start: number, candleTotal: number, minPrice: number, maxPrice: number, areaY: number, areaH: number) {
     const priceRange = maxPrice - minPrice || 1;
-    const priceHeight = height * 0.85;
+    const chartRight = this.cssWidth - PADDING_RIGHT;
 
     visibleData.forEach((d, i) => {
-      const x = i * candleTotal + this.candleWidth / 2;
+      const x = PADDING_LEFT + i * candleTotal + this.candleWidth / 2;
+      // Skip candles whose left edge is already past the Y axis
+      if (PADDING_LEFT + i * candleTotal >= chartRight) return;
+
       const isUp = d.close >= d.open;
-      const color = isUp ? DEFAULT_CONFIG.upColor : DEFAULT_CONFIG.downColor;
+      const color = isUp ? this.config.upColor : this.config.downColor;
 
-      // Y position
-      const yHigh = priceHeight - ((d.high - minPrice) / priceRange) * priceHeight;
-      const yLow = priceHeight - ((d.low - minPrice) / priceRange) * priceHeight;
-      const yOpen = priceHeight - ((d.open - minPrice) / priceRange) * priceHeight;
-      const yClose = priceHeight - ((d.close - minPrice) / priceRange) * priceHeight;
+      const yHigh = areaY + areaH - ((d.high - minPrice) / priceRange) * areaH;
+      const yLow = areaY + areaH - ((d.low - minPrice) / priceRange) * areaH;
+      const yOpen = areaY + areaH - ((d.open - minPrice) / priceRange) * areaH;
+      const yClose = areaY + areaH - ((d.close - minPrice) / priceRange) * areaH;
 
-      // Draw wick
+      // Wick
       this.ctx.strokeStyle = color;
       this.ctx.lineWidth = 1;
       this.ctx.beginPath();
@@ -194,7 +393,7 @@ export class ChartRenderer {
       this.ctx.lineTo(x, yLow);
       this.ctx.stroke();
 
-      // Draw body
+      // Body
       const bodyTop = Math.min(yOpen, yClose);
       const bodyHeight = Math.abs(yClose - yOpen) || 1;
       this.ctx.fillStyle = color;
@@ -202,25 +401,13 @@ export class ChartRenderer {
     });
   }
 
-  private drawMALines() {
-    const mas = [5, 10, 20, 30, 60];
-    const { start, end } = this.visibleRange;
-    const visibleData = this.data.slice(start, end);
-    if (visibleData.length === 0) return;
-    const { height } = this.canvas;
-    const priceHeight = height * 0.85;
-
-    let minPrice = Infinity, maxPrice = -Infinity;
-    visibleData.forEach((d) => {
-      minPrice = Math.min(minPrice, d.low);
-      maxPrice = Math.max(maxPrice, d.high);
-    });
+  private drawMALines(visibleData: KLineData[], start: number, candleTotal: number, minPrice: number, maxPrice: number, areaY: number, areaH: number) {
     const priceRange = maxPrice - minPrice || 1;
-    const candleTotal = this.candleWidth + this.candleGap;
 
-    mas.forEach((period, idx) => {
-      if (visibleData.length < period) return;
-      const color = DEFAULT_CONFIG.maColors[idx];
+    this.settings.maPeriods.forEach((period, idx) => {
+      if (idx >= this.config.maColors.length) return;
+      const maData = this.getMA(period);
+      const color = this.config.maColors[idx];
 
       this.ctx.strokeStyle = color;
       this.ctx.lineWidth = 1;
@@ -228,14 +415,13 @@ export class ChartRenderer {
 
       let started = false;
       visibleData.forEach((d, i) => {
-        if (i < period - 1) return;
-        let sum = 0;
-        for (let j = 0; j < period; j++) {
-          sum += visibleData[i - j].close;
-        }
-        const ma = sum / period;
-        const x = (i - period + 1) * candleTotal + this.candleWidth / 2;
-        const y = priceHeight - ((ma - minPrice) / priceRange) * priceHeight;
+        const dataIndex = start + i;
+        if (dataIndex < period - 1) return;
+        const ma = maData[dataIndex];
+        if (ma === null) return;
+
+        const x = PADDING_LEFT + i * candleTotal + this.candleWidth / 2;
+        const y = areaY + areaH - ((ma - minPrice) / priceRange) * areaH;
 
         if (!started) {
           this.ctx.moveTo(x, y);
@@ -249,17 +435,326 @@ export class ChartRenderer {
     });
   }
 
+  private drawBOLL(visibleData: KLineData[], start: number, candleTotal: number, minPrice: number, maxPrice: number, areaY: number, areaH: number) {
+    const boll = this.getBOLL();
+    const priceRange = maxPrice - minPrice || 1;
+
+    // Draw upper and lower bands
+    const drawLine = (data: (number | null)[]) => {
+      this.ctx.beginPath();
+      let started = false;
+      visibleData.forEach((d, i) => {
+        const dataIndex = start + i;
+        const value = data[dataIndex];
+        if (value === null) return;
+
+        const x = PADDING_LEFT + i * candleTotal + this.candleWidth / 2;
+        const y = areaY + areaH - ((value - minPrice) / priceRange) * areaH;
+
+        if (!started) {
+          this.ctx.moveTo(x, y);
+          started = true;
+        } else {
+          this.ctx.lineTo(x, y);
+        }
+      });
+      this.ctx.stroke();
+    };
+
+    // Upper band - purple
+    this.ctx.strokeStyle = "#cc66ff";
+    this.ctx.lineWidth = 1;
+    drawLine(boll.upper);
+
+    // Lower band - purple
+    drawLine(boll.lower);
+
+    // Middle band - dashed yellow
+    this.ctx.setLineDash([4, 4]);
+    this.ctx.strokeStyle = "#ffff00";
+    drawLine(boll.middle);
+    this.ctx.setLineDash([]);
+  }
+
+  private drawVolume(visibleData: KLineData[], start: number, candleTotal: number, areaY: number, areaH: number) {
+    // Find max volume in visible range
+    let maxVolume = 0;
+    visibleData.forEach((d) => {
+      maxVolume = Math.max(maxVolume, d.volume);
+    });
+    if (maxVolume === 0) maxVolume = 1;
+
+    visibleData.forEach((d, i) => {
+      const x = PADDING_LEFT + i * candleTotal;
+      const isUp = d.close >= d.open;
+      const color = isUp ? this.config.upColor : this.config.downColor;
+      const barHeight = (d.volume / maxVolume) * areaH * 0.9;
+
+      this.ctx.fillStyle = color + "80"; // Semi-transparent
+      this.ctx.fillRect(x, areaY + areaH - barHeight, this.candleWidth, barHeight);
+    });
+  }
+
+  private drawMACD(start: number, candleTotal: number, areaY: number, areaH: number) {
+    const macd = this.getMACD();
+    const visibleEnd = this.visibleRange.end;
+
+    // Find max/min for scaling
+    let maxVal = 0, minVal = 0;
+    for (let i = start; i < visibleEnd; i++) {
+      maxVal = Math.max(maxVal, macd.dif[i], macd.dea[i], macd.macd[i]);
+      minVal = Math.min(minVal, macd.dif[i], macd.dea[i], macd.macd[i]);
+    }
+    const range = maxVal - minVal || 1;
+    const midY = areaY + areaH / 2;
+
+    // Draw DIF (white) and DEA (yellow)
+    this.ctx.lineWidth = 1;
+
+    // DIF
+    this.ctx.strokeStyle = "#ffffff";
+    this.ctx.beginPath();
+    let started = false;
+    for (let i = start; i < visibleEnd; i++) {
+      const x = PADDING_LEFT + (i - start) * candleTotal + this.candleWidth / 2;
+      const y = midY - ((macd.dif[i] - (maxVal + minVal) / 2) / range) * (areaH / 2);
+      if (!started) { this.ctx.moveTo(x, y); started = true; }
+      else this.ctx.lineTo(x, y);
+    }
+    this.ctx.stroke();
+
+    // DEA
+    this.ctx.strokeStyle = "#ffff00";
+    this.ctx.beginPath();
+    started = false;
+    for (let i = start; i < visibleEnd; i++) {
+      const x = PADDING_LEFT + (i - start) * candleTotal + this.candleWidth / 2;
+      const y = midY - ((macd.dea[i] - (maxVal + minVal) / 2) / range) * (areaH / 2);
+      if (!started) { this.ctx.moveTo(x, y); started = true; }
+      else this.ctx.lineTo(x, y);
+    }
+    this.ctx.stroke();
+
+    // MACD histogram
+    for (let i = start; i < visibleEnd; i++) {
+      const x = PADDING_LEFT + (i - start) * candleTotal;
+      const macdVal = macd.macd[i];
+      const y = midY - ((macdVal - (maxVal + minVal) / 2) / range) * (areaH / 2);
+      const barHeight = Math.abs(macdVal / range) * (areaH / 2);
+      const barY = macdVal >= 0 ? y : midY;
+
+      this.ctx.fillStyle = macdVal >= 0 ? "#e5393580" : "#4caf5080";
+      this.ctx.fillRect(x, barY, this.candleWidth, barHeight);
+    }
+
+    // Label
+    this.ctx.fillStyle = "#888888";
+    this.ctx.font = "10px JetBrains Mono, monospace";
+    this.ctx.fillText("MACD", 5, areaY + 12);
+  }
+
+  private drawKDJ(start: number, candleTotal: number, areaY: number, areaH: number) {
+    const kdj = this.getKDJ();
+    const visibleEnd = this.visibleRange.end;
+
+    this.ctx.lineWidth = 1;
+
+    // K line - white
+    this.ctx.strokeStyle = "#ffffff";
+    this.ctx.beginPath();
+    let started = false;
+    for (let i = start; i < visibleEnd; i++) {
+      const x = PADDING_LEFT + (i - start) * candleTotal + this.candleWidth / 2;
+      const y = areaY + areaH - (kdj.k[i] / 100) * areaH;
+      if (!started) { this.ctx.moveTo(x, y); started = true; }
+      else this.ctx.lineTo(x, y);
+    }
+    this.ctx.stroke();
+
+    // D line - yellow
+    this.ctx.strokeStyle = "#ffff00";
+    this.ctx.beginPath();
+    started = false;
+    for (let i = start; i < visibleEnd; i++) {
+      const x = PADDING_LEFT + (i - start) * candleTotal + this.candleWidth / 2;
+      const y = areaY + areaH - (kdj.d[i] / 100) * areaH;
+      if (!started) { this.ctx.moveTo(x, y); started = true; }
+      else this.ctx.lineTo(x, y);
+    }
+    this.ctx.stroke();
+
+    // J line - purple
+    this.ctx.strokeStyle = "#cc66ff";
+    this.ctx.beginPath();
+    started = false;
+    for (let i = start; i < visibleEnd; i++) {
+      const x = PADDING_LEFT + (i - start) * candleTotal + this.candleWidth / 2;
+      const y = areaY + areaH - (kdj.j[i] / 100) * areaH;
+      if (!started) { this.ctx.moveTo(x, y); started = true; }
+      else this.ctx.lineTo(x, y);
+    }
+    this.ctx.stroke();
+
+    // Label
+    this.ctx.fillStyle = "#888888";
+    this.ctx.font = "10px JetBrains Mono, monospace";
+    this.ctx.fillText("KDJ", 5, areaY + 12);
+  }
+
+  private drawRSI(start: number, candleTotal: number, areaY: number, areaH: number) {
+    const rsi = this.getRSI();
+    const visibleEnd = this.visibleRange.end;
+
+    this.ctx.strokeStyle = "#cc66ff";
+    this.ctx.lineWidth = 1;
+    this.ctx.beginPath();
+
+    let started = false;
+    for (let i = start; i < visibleEnd; i++) {
+      const value = rsi[i];
+      if (value === null) continue;
+      const x = PADDING_LEFT + (i - start) * candleTotal + this.candleWidth / 2;
+      const y = areaY + areaH - (value / 100) * areaH;
+      if (!started) { this.ctx.moveTo(x, y); started = true; }
+      else this.ctx.lineTo(x, y);
+    }
+    this.ctx.stroke();
+
+    // Overbought/oversold lines
+    this.ctx.strokeStyle = "#4a4a4a";
+    this.ctx.setLineDash([4, 4]);
+    // 70 line
+    this.ctx.beginPath();
+    this.ctx.moveTo(PADDING_LEFT, areaY + areaH * 0.3);
+    this.ctx.lineTo(this.cssWidth - PADDING_RIGHT, areaY + areaH * 0.3);
+    this.ctx.stroke();
+    // 30 line
+    this.ctx.beginPath();
+    this.ctx.moveTo(PADDING_LEFT, areaY + areaH * 0.7);
+    this.ctx.lineTo(this.cssWidth - PADDING_RIGHT, areaY + areaH * 0.7);
+    this.ctx.stroke();
+    this.ctx.setLineDash([]);
+
+    // Label
+    this.ctx.fillStyle = "#888888";
+    this.ctx.font = "10px JetBrains Mono, monospace";
+    this.ctx.fillText("RSI", 5, areaY + 12);
+  }
+
+  private drawPriceAxis(minPrice: number, maxPrice: number, areaY: number, areaH: number) {
+    // Draw Y axis labels in the padding area
+    const labelX = this.cssWidth - PADDING_RIGHT + 8;
+    this.ctx.fillStyle = "#888888";
+    this.ctx.font = "10px JetBrains Mono, monospace";
+    this.ctx.textAlign = "left";
+
+    const step = (maxPrice - minPrice) / 4;
+    for (let i = 0; i <= 4; i++) {
+      const price = maxPrice - step * i;
+      const y = areaY + (areaH / 4) * i + 4;
+      this.ctx.fillText(price.toFixed(2), labelX, y);
+    }
+
+    this.ctx.textAlign = "start";
+  }
+
+  private drawTimeAxis(visibleData: KLineData[], start: number, candleTotal: number) {
+    if (visibleData.length === 0) return;
+
+    const y = this.cssHeight - 5;
+    this.ctx.fillStyle = "#888888";
+    this.ctx.font = "10px JetBrains Mono, monospace";
+    this.ctx.textAlign = "center";
+
+    // Show date labels at intervals
+    const interval = Math.max(1, Math.floor(visibleData.length / 6));
+    visibleData.forEach((d, i) => {
+      if (i % interval !== 0) return;
+      const x = PADDING_LEFT + i * candleTotal + this.candleWidth / 2;
+      const dateStr = String(d.date);
+      const label = `${dateStr.slice(4, 6)}/${dateStr.slice(6, 8)}`;
+      this.ctx.fillText(label, x, y);
+    });
+
+    this.ctx.textAlign = "start";
+  }
+
+  private drawCrosshair(areas: ReturnType<typeof this.getDrawingAreas>) {
+    const { main } = areas;
+    const chartRight = this.cssWidth - PADDING_RIGHT;
+
+    this.ctx.save();
+
+    // Snap to nearest candle center
+    const candleTotal = this.candleWidth + this.candleGap;
+    const candleIndex = Math.floor((this.crosshairX! - PADDING_LEFT) / candleTotal);
+    const snapX = PADDING_LEFT + candleIndex * candleTotal + candleTotal / 2;
+
+    // Vertical line — dashed, spans the entire chart height, snapped to candle center
+    this.ctx.strokeStyle = "rgba(150, 150, 150, 0.8)";
+    this.ctx.lineWidth = 1;
+    this.ctx.setLineDash([4, 4]);
+    this.ctx.beginPath();
+    this.ctx.moveTo(snapX, 0);
+    this.ctx.lineTo(snapX, this.cssHeight);
+    this.ctx.stroke();
+
+    // Horizontal line — dashed, spans the price chart area
+    if (this.crosshairY !== null) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(PADDING_LEFT, this.crosshairY!);
+      this.ctx.lineTo(chartRight, this.crosshairY!);
+      this.ctx.stroke();
+
+      // Price label on Y axis
+      const priceRange = this.getMainPriceRange();
+      if (priceRange) {
+        const { minPrice, maxPrice } = priceRange;
+        const areaH = main.h;
+        const areaY = main.y;
+        const price = maxPrice - ((this.crosshairY! - areaY) / areaH) * (maxPrice - minPrice);
+        const labelX = this.cssWidth - PADDING_RIGHT + 8;
+        this.ctx.fillStyle = "rgba(30, 30, 30, 0.85)";
+        this.ctx.fillRect(labelX - 2, this.crosshairY! - 8, 65, 16);
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.font = "10px JetBrains Mono, monospace";
+        this.ctx.textAlign = "left";
+        this.ctx.fillText(price.toFixed(2), labelX, this.crosshairY! + 3);
+      }
+    }
+
+    this.ctx.restore();
+  }
+
+  private getMainPriceRange(): { minPrice: number; maxPrice: number } | null {
+    const { start, end } = this.visibleRange;
+    if (this.data.length === 0 || start >= end) return null;
+    const visibleData = this.data.slice(start, end);
+    let minPrice = Infinity, maxPrice = -Infinity;
+    visibleData.forEach((d) => {
+      minPrice = Math.min(minPrice, d.low);
+      maxPrice = Math.max(maxPrice, d.high);
+    });
+    return { minPrice, maxPrice };
+  }
+
   resize(width: number, height: number) {
-    this.canvas.width = width;
-    this.canvas.height = height;
+    const dpr = window.devicePixelRatio || 1;
+    this.cssWidth = width;
+    this.cssHeight = height;
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+    this.ctx.scale(dpr, dpr);
     this.calculateVisibleRange();
     this.render();
   }
 
-  // Get data at pixel position (for crosshair)
   getDataAtX(x: number): KLineData | null {
+    if (x < PADDING_LEFT || x >= this.cssWidth - PADDING_RIGHT) return null;
     const candleTotal = this.candleWidth + this.candleGap;
-    const index = Math.floor(x / candleTotal) + this.visibleRange.start;
+    const index = Math.floor((x - PADDING_LEFT) / candleTotal) + this.visibleRange.start;
     if (index < 0 || index >= this.data.length) return null;
     return this.data[index];
   }

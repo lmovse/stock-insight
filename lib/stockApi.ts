@@ -38,17 +38,65 @@ export async function getKLineData(
   const candles = await prisma.dailyCandle.findMany({
     where: { tsCode },
     orderBy: { tradeDate: "asc" },
-    take: count,
+    // Fetch enough daily data to aggregate into the requested period count
+    take: period === "daily" ? count : count * 7,
   });
-  return candles.map((c) => ({
-    date: parseInt(c.tradeDate),
-    open: c.open,
-    high: c.high,
-    low: c.low,
-    close: c.close,
-    volume: c.vol,
-    amount: c.amount ?? undefined,
-  }));
+
+  if (period === "daily") {
+    return candles.map((c) => ({
+      date: parseInt(c.tradeDate),
+      open: c.open,
+      high: c.high,
+      low: c.low,
+      close: c.close,
+      volume: c.vol,
+      amount: c.amount ?? undefined,
+    }));
+  }
+
+  // Aggregate daily into weekly or monthly
+  const grouped = new Map<string, typeof candles>();
+
+  candles.forEach((c) => {
+    const y = c.tradeDate.slice(0, 4);
+    const m = c.tradeDate.slice(4, 6);
+    const d = parseInt(c.tradeDate.slice(6, 8));
+
+    let key: string;
+    if (period === "weekly") {
+      // ISO week: get the Monday of the week
+      const date = new Date(parseInt(y), parseInt(m) - 1, d);
+      const day = date.getDay(); // 0=Sun, 1=Mon, ...
+      const diffToMon = day === 0 ? -6 : 1 - day;
+      const monday = new Date(date);
+      monday.setDate(d + diffToMon);
+      const wy = String(monday.getFullYear());
+      const wm = String(monday.getMonth() + 1).padStart(2, "0");
+      const wd = String(monday.getDate()).padStart(2, "0");
+      key = `${wy}${wm}${wd}`;
+    } else {
+      // monthly: first day of month
+      key = `${y}${m}01`;
+    }
+
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(c);
+  });
+
+  const result: KLineData[] = [];
+  grouped.forEach((bars, key) => {
+    result.push({
+      date: parseInt(key),
+      open: bars[0].open,
+      high: Math.max(...bars.map((b) => b.high)),
+      low: Math.min(...bars.map((b) => b.low)),
+      close: bars[bars.length - 1].close,
+      volume: bars.reduce((sum, b) => sum + b.vol, 0),
+      amount: bars.reduce((sum, b) => sum + (b.amount ?? 0), 0) || undefined,
+    });
+  });
+
+  return result.slice(-count);
 }
 
 export async function getStockInfo(code: string): Promise<StockInfo> {

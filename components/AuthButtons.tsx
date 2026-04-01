@@ -7,33 +7,32 @@ export default function AuthButtons() {
   const { user, loading, logout } = useUser();
 
   if (loading) {
-    return (
-      <div className="w-8 h-8 bg-[var(--surface-elevated)] border border-[var(--border)] animate-pulse" />
-    );
+    return <div className="w-16 h-8 rounded-lg bg-[var(--surface-hover)] animate-pulse" />;
   }
 
   if (user) {
     return (
       <button
         onClick={logout}
-        className="px-3 py-1.5 text-sm bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+        className="px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] rounded-lg transition-all border border-[var(--border)]"
       >
-        {user.email}
+        {user.email.split('@')[0]}
       </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <Link
         href="/login"
-        className="px-3 py-1.5 text-sm bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+        className="px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] rounded-lg transition-all border border-[var(--border)]"
       >
         登录
       </Link>
       <Link
         href="/register"
-        className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white hover:opacity-90 transition-opacity"
+        className="px-3 py-1.5 text-sm font-semibold text-white rounded-lg transition-all border border-transparent"
+        style={{ background: 'var(--accent)' }}
       >
         注册
       </Link>

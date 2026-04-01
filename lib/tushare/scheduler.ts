@@ -1,5 +1,5 @@
 import cron, { ScheduledTask } from 'node-cron';
-import { syncStockBasics, syncDailyCandles, syncIndexBasics, syncIndexDaily } from './sync';
+import { syncStockBasics, syncDailyCandles, syncIndexBasics, syncIndexDaily, syncMairuiStockList } from './sync.js';
 
 interface TaskConfig {
   name: string;
@@ -8,8 +8,8 @@ interface TaskConfig {
 }
 
 const TASKS: TaskConfig[] = [
-  // 每天 02:00 全量拉取股票基础信息
-  { name: 'sync_stock_basics', cron: '0 2 * * *', fn: syncStockBasics },
+  // 每天 01:00 拉取股票列表（mairui 免费无限制）
+  { name: 'sync_mairui_stock_list', cron: '0 1 * * *', fn: syncMairuiStockList },
   // 交易日 16:00-23:55 每5分钟增量同步日线行情
   { name: 'sync_daily_candles', cron: '*/5 16-23 * * 1-5', fn: syncDailyCandles },
   // 每天 03:00 拉取指数基础信息

@@ -3,7 +3,7 @@
 // Run with: npx ts-node jobs/sync.ts
 // Or compile and run with: node dist/jobs/sync.js
 
-import { startScheduler, stopScheduler } from '../lib/tushare/scheduler';
+import { startScheduler, stopScheduler } from '../lib/tushare/scheduler.js';
 
 console.log('[sync-process] starting tushare sync scheduler...');
 

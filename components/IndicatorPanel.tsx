@@ -53,34 +53,34 @@ export default function IndicatorPanel({ config, onChange }: Props) {
     }
   };
 
+  const indicators = [
+    { key: "ma", label: "MA" },
+    { key: "macd", label: "MACD" },
+    { key: "kdj", label: "KDJ" },
+    { key: "boll", label: "BOLL" },
+    { key: "rsi", label: "RSI" },
+  ] as const;
+
   return (
     <>
-      <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)]">
-        <div className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wide mb-3">
-          技术指标
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {([
-            { key: "ma", label: "MA", hasConfig: true },
-            { key: "macd", label: "MACD", hasConfig: true },
-            { key: "kdj", label: "KDJ", hasConfig: true },
-            { key: "boll", label: "BOLL", hasConfig: true },
-            { key: "rsi", label: "RSI", hasConfig: true },
-          ] as const).map(({ key, label, hasConfig }) => (
-            <div key={key} className="relative">
-              <button
-                type="button"
-                aria-pressed={config[key]}
-                onClick={() => (hasConfig ? handleIndicatorClick(label) : toggle(key))}
-                className={`px-2 py-1 text-xs font-mono border transition-colors ${
-                  config[key]
-                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                    : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
-                }`}
-              >
-                {label}
-              </button>
-            </div>
+      <div className="flex items-center gap-4">
+        <span className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">指标</span>
+        <div className="flex items-center gap-2">
+          {indicators.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={config[key]}
+              onClick={() => toggle(key)}
+              onDoubleClick={() => handleIndicatorClick(label)}
+              className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${
+                config[key]
+                  ? "pill-active"
+                  : "pill-inactive"
+              }`}
+            >
+              {label}
+            </button>
           ))}
         </div>
       </div>

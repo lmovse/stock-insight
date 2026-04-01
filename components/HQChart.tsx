@@ -29,12 +29,19 @@ export default function HQChart({ code, klineData, indicators }: Props) {
     const renderer = new ChartRenderer(canvasRef.current);
     rendererRef.current = renderer;
 
-    // Handle resize
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        renderer.resize(width, height);
+    // Resize using getBoundingClientRect for accurate dimensions
+    const doResize = () => {
+      if (!containerRef.current || !rendererRef.current) return;
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      if (width > 0 && height > 0) {
+        rendererRef.current.resize(width, height);
       }
+    };
+
+    doResize();
+
+    const resizeObserver = new ResizeObserver(() => {
+      doResize();
     });
     resizeObserver.observe(containerRef.current);
 
@@ -47,19 +54,56 @@ export default function HQChart({ code, klineData, indicators }: Props) {
   useEffect(() => {
     if (!rendererRef.current || !klineData.length) return;
     rendererRef.current.setData(klineData);
+    rendererRef.current.resetScroll();
   }, [klineData]);
+
+  // Update indicator settings
+  useEffect(() => {
+    if (!rendererRef.current) return;
+    rendererRef.current.setSettings({
+      ma: indicators.ma,
+      maPeriods: indicators.maPeriods,
+      macd: indicators.macd,
+      kdj: indicators.kdj,
+      boll: indicators.boll,
+      rsi: indicators.rsi,
+    });
+  }, [indicators]);
+
+  // Handle theme changes
+  useEffect(() => {
+    if (!rendererRef.current) return;
+
+    const theme = document.documentElement.getAttribute("data-theme") as "dark" | "light" || "dark";
+    rendererRef.current.setTheme(theme);
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.attributeName === "data-theme") {
+          const newTheme = document.documentElement.getAttribute("data-theme") as "dark" | "light" || "dark";
+          rendererRef.current?.setTheme(newTheme);
+        }
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Crosshair handling
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!rendererRef.current) return;
     const rect = canvasRef.current!.getBoundingClientRect();
     const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    rendererRef.current.setCrosshair(x, y);
     const data = rendererRef.current.getDataAtX(x);
     setCrosshairData(data);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
     setCrosshairData(null);
+    rendererRef.current?.setCrosshair(null, null);
   }, []);
 
   // Format date
@@ -68,56 +112,43 @@ export default function HQChart({ code, klineData, indicators }: Props) {
     return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
   };
 
-  // Calculate price change
-  const getChange = (data: KLineData) => {
-    const prevClose = data.open; // approximate
-    const change = data.close - prevClose;
-    const changePercent = (change / prevClose) * 100;
-    return { change, changePercent };
-  };
-
   return (
-    <div className="flex flex-col h-[500px]">
-      {/* Period selector */}
-      <div className="flex items-center gap-2 mb-2 shrink-0">
-        {(["日K", "周K", "月K"] as const).map((label) => (
-          <button
-            key={label}
-            className="px-3 py-1 text-xs font-mono border bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] transition-colors"
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <div ref={containerRef} className="relative h-full">
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      />
 
-      {/* Chart container */}
-      <div ref={containerRef} className="flex-1 relative bg-[#1a1a1a] rounded min-h-0">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-        />
-
-        {/* Crosshair info box */}
-        {crosshairData && (
-          <div className="absolute top-2 left-2 bg-[#1a1a1a] border border-[#2a2a2a] p-2 text-xs font-mono text-white z-10">
-            <div className="text-[#888] mb-1">{formatDate(crosshairData.date)}</div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-              <span className="text-[#888]">开盘:</span>
-              <span>{crosshairData.open.toFixed(2)}</span>
-              <span className="text-[#888]">最高:</span>
-              <span className="text-[#e53935]">{crosshairData.high.toFixed(2)}</span>
-              <span className="text-[#888]">收盘:</span>
-              <span>{crosshairData.close.toFixed(2)}</span>
-              <span className="text-[#888]">最低:</span>
-              <span className="text-[#4caf50]">{crosshairData.low.toFixed(2)}</span>
-              <span className="text-[#888]">成交量:</span>
-              <span>{(crosshairData.volume / 10000).toFixed(2)}万</span>
+      {/* Crosshair info box */}
+      {crosshairData && (
+        <div className="absolute top-4 left-4 bg-[var(--surface)]/95 backdrop-blur-md rounded-2xl p-4 text-sm shadow-xl border border-[var(--border)]">
+          <div className="text-[var(--text-muted)] mb-3 font-medium">{formatDate(crosshairData.date)}</div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-6">
+              <span className="text-[var(--text-secondary)]">开盘</span>
+              <span className="font-mono font-medium">{crosshairData.open.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-6">
+              <span className="text-[var(--text-secondary)]">最高</span>
+              <span className="font-mono font-medium text-[var(--up-color)]">{crosshairData.high.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-6">
+              <span className="text-[var(--text-secondary)]">收盘</span>
+              <span className="font-mono font-medium">{crosshairData.close.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-6">
+              <span className="text-[var(--text-secondary)]">最低</span>
+              <span className="font-mono font-medium text-[var(--down-color)]">{crosshairData.low.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-6 pt-2 border-t border-[var(--border-subtle)]">
+              <span className="text-[var(--text-secondary)]">成交量</span>
+              <span className="font-mono font-medium">{(crosshairData.volume / 10000).toFixed(2)}万</span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,20 +3,32 @@
 import Link from "next/link";
 import StockSearch from "./StockSearch";
 import AuthButtons from "./AuthButtons";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   return (
-    <header className="h-14 border-b border-[var(--border)] flex items-center px-4 gap-4 bg-[var(--surface)]">
-      <Link href="/" className="flex items-center gap-2 shrink-0">
-        <div className="w-6 h-6 bg-[var(--accent)]" />
-        <span className="font-display font-semibold text-[var(--text-primary)] tracking-wide">
-          股票分析
+    <header className="header-bar h-[52px] px-5 flex items-center gap-4">
+      <Link href="/" className="flex items-center gap-2 shrink-0 group">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ background: 'var(--accent)' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        </div>
+        <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors">
+          StockInsight
         </span>
       </Link>
-      <div className="flex-1 flex justify-center">
+
+      <div className="flex-1 max-w-xs mx-auto">
         <StockSearch />
       </div>
-      <AuthButtons />
+
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <AuthButtons />
+      </div>
     </header>
   );
 }
