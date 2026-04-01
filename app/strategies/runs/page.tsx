@@ -18,7 +18,10 @@ export default function StrategyRunsPage() {
   useEffect(() => {
     fetch("/api/strategy-runs?limit=50")
       .then((r) => r.json())
-      .then((d) => setRuns(d.runs ?? []));
+      .then((d) => {
+        if (d && Array.isArray(d.runs)) setRuns(d.runs);
+      })
+      .catch(() => {});
   }, []);
 
   return (

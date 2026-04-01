@@ -21,7 +21,10 @@ export default function StrategyForm({ initial, onSuccess }: StrategyFormProps) 
   useEffect(() => {
     fetch("/api/prompts")
       .then((r) => r.json())
-      .then(setPrompts);
+      .then((data) => {
+        if (Array.isArray(data)) setPrompts(data);
+      })
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

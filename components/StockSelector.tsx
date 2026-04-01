@@ -22,11 +22,13 @@ export default function StockSelector({
     fetch("/api/watchlist")
       .then((r) => r.json())
       .then((data) => {
-        setWatchlist(data.map((item: { stockCode: string }) => ({
-          code: item.stockCode,
-          name: item.stockCode,
-          market: "sz" as const,
-        })));
+        if (Array.isArray(data)) {
+          setWatchlist(data.map((item: { stockCode: string }) => ({
+            code: item.stockCode,
+            name: item.stockCode,
+            market: "sz" as const,
+          })));
+        }
       })
       .catch(() => setWatchlist([]));
   }, []);

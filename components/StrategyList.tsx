@@ -16,7 +16,10 @@ export default function StrategyList() {
   useEffect(() => {
     fetch("/api/strategies")
       .then((r) => r.json())
-      .then(setStrategies);
+      .then((data) => {
+        if (Array.isArray(data)) setStrategies(data);
+      })
+      .catch(() => {});
   }, []);
 
   const handleDelete = async (id: string) => {

@@ -33,7 +33,12 @@ export default function StrategyRunner() {
   useEffect(() => {
     fetch("/api/strategies")
       .then((r) => r.json())
-      .then(setStrategies);
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setStrategies(data);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleRun = useCallback(async () => {
