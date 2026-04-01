@@ -25,7 +25,19 @@ export default function Header() {
         <StockSearch />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
+        <Link href="/strategies" className="text-sm text-gray-400 hover:text-white transition-colors">
+          策略
+        </Link>
+        <Link href="/strategies/run" className="text-sm text-gray-400 hover:text-white transition-colors">
+          运行
+        </Link>
+        <Link href="/strategies/runs" className="text-sm text-gray-400 hover:text-white transition-colors">
+          历史
+        </Link>
+        <Link href="/prompts" className="text-sm text-gray-400 hover:text-white transition-colors">
+          提示词
+        </Link>
         <ThemeToggle />
         <AuthButtons />
       </div>
