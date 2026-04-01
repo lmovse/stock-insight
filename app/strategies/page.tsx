@@ -187,7 +187,7 @@ export default function StrategiesPage() {
       {/* 新建表单 */}
       {showNewForm && (
         <div className="glass-card rounded-xl p-5 shrink-0 form-slide-enter">
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略名称</label>
               <input
@@ -293,7 +293,7 @@ export default function StrategiesPage() {
               </div>
             ) : (
               /* 显示状态 */
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-[var(--text-primary)]">{s.name}</span>
@@ -308,7 +308,7 @@ export default function StrategiesPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                   <button onClick={() => openRunDialog(s)} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors">
                     运行
                   </button>
@@ -348,7 +348,7 @@ export default function StrategiesPage() {
         >
           <div
             ref={dialogRef}
-            className="glass-card rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-dialog-enter"
+            className="glass-card rounded-2xl w-full max-w-[95vw] sm:max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-dialog-enter"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Dialog header */}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import StockSearch from "./StockSearch";
@@ -14,6 +15,7 @@ const navLinks = [
 
 export default function Header() {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (href: string) => {
     if (href === "/stock/600519") {
@@ -23,8 +25,8 @@ export default function Header() {
   };
 
   return (
-    <header className="header-bar h-[52px] px-5 flex items-center gap-4">
-      <Link href="/" className="flex items-center gap-2 shrink-0 group">
+    <header className="header-bar relative h-[52px] px-2 sm:px-5 flex items-center gap-2 sm:gap-4">
+      <Link href="/" className="flex items-center gap-1 sm:gap-2 shrink-0 group">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="items-center">
           <defs>
             <linearGradient id="logoGrad" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
@@ -40,16 +42,17 @@ export default function Header() {
             </filter>
           </defs>
         </svg>
-        <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors">
+        <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors hidden sm:inline">
           StockInsight
         </span>
       </Link>
 
-      <div className="flex-1 max-w-xs mx-auto">
+      <div className="flex-1 min-w-0 mx-2">
         <StockSearch />
       </div>
 
-      <div className="flex items-center gap-1">
+      {/* Desktop nav */}
+      <div className="hidden md:flex items-center gap-1">
         {navLinks.map((link) => (
           <Link
             key={link.href}
@@ -65,7 +68,54 @@ export default function Header() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Mobile menu button */}
+      <button
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        className="md:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:bg-white/10 transition-colors"
+      >
+        {mobileMenuOpen ? (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        )}
+      </button>
+
+      {/* Mobile dropdown menu */}
+      {mobileMenuOpen && (
+        <div className="absolute top-[52px] left-0 right-0 z-50 border-t border-[var(--border)] md:hidden"
+          style={{ background: 'var(--surface)' }}>
+          <div
+            className="backdrop-blur-md"
+            style={{ background: 'oklch(from var(--surface) l c h / 0.8)' }}
+          >
+            <div className="flex flex-col gap-1 p-3">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`px-4 py-2.5 text-sm rounded-lg transition-colors font-medium ${
+                    isActive(link.href)
+                      ? "text-[var(--accent)]"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-1 sm:gap-2">
         <ThemeToggle />
         <AuthButtons />
       </div>

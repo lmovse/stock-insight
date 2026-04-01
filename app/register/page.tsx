@@ -52,7 +52,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-      <div className="w-full max-w-md p-8 bg-[var(--surface)] border border-[var(--border)]">
+      <div className="w-full max-w-[95vw] sm:max-w-md p-4 sm:p-8 bg-[var(--surface)] border border-[var(--border)]">
         <h1 className="text-2xl font-display font-bold text-[var(--text-primary)] mb-6">注册</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">

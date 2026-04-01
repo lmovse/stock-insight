@@ -127,11 +127,11 @@ export default function PromptsPage() {
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] font-mono resize-none leading-relaxed"
-              rows={10}
+              rows={6}
               placeholder={`提示词内容，支持 {{变量名}} 占位符...`}
             />
           </div>
-          <div className="flex gap-2 mt-4">
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
             <button
               onClick={handleCreate}
               className="px-5 py-2 rounded-lg text-sm font-semibold pill-active"
@@ -174,7 +174,7 @@ export default function PromptsPage() {
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
                       placeholder={`提示词内容，支持 {{变量名}} 占位符...`}
-                      rows={10}
+                      rows={6}
                       className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono resize-none leading-relaxed"
                     />
                   </div>

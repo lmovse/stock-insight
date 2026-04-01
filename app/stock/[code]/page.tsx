@@ -58,42 +58,43 @@ export default function StockPage() {
     <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden animate-page-enter">
 
       {/* Stock info strip - sticky */}
-      <div className="info-strip shrink-0 px-5 py-3 relative sticky top-0 z-10 bg-[var(--background)]">
+      <div className="info-strip shrink-0 px-3 sm:px-5 py-3 relative sticky top-0 z-10 bg-[var(--background)]">
         {/* Left accent bar */}
         <div className="accent-bar absolute left-0 top-3 bottom-3" />
 
-        <div className="flex items-center gap-5 pl-3">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-5 pl-3">
           {/* Stock badge + name */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-sm"
               style={{ background: 'var(--accent)' }}
             >
-              {code.slice(0, 2)}
+              <span className="hidden xs:inline">{code.slice(0, 2)}</span>
+              <span className="xs:hidden">{code.slice(0, 1)}</span>
             </div>
             <div>
               <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
                 {stockInfo?.name || code}
               </div>
-              <div className="text-xs text-[var(--text-muted)] font-mono">{code}</div>
+              <div className="text-xs text-[var(--text-muted)] font-mono hidden sm:block">{code}</div>
             </div>
           </div>
 
-          <div className="w-px h-8 bg-[var(--border)]" />
+          <div className="w-px h-6 sm:h-8 bg-[var(--border)] hidden sm:block" />
 
           {/* Price + change */}
-          <div className="flex items-baseline gap-3">
-            <span className={`text-2xl font-bold font-mono ${isUp ? 'text-[var(--up-color)]' : 'text-[var(--down-color)]'}`}>
+          <div className="flex items-baseline gap-2 sm:gap-3">
+            <span className={`text-xl sm:text-2xl font-bold font-mono ${isUp ? 'text-[var(--up-color)]' : 'text-[var(--down-color)]'}`}>
               {lastData?.close.toFixed(2) || '--'}
             </span>
-            <span className={`text-sm font-semibold px-2 py-0.5 rounded-lg font-mono ${isUp ? 'badge-up' : 'badge-down'}`}>
+            <span className={`text-xs sm:text-sm font-semibold px-1.5 sm:px-2 py-0.5 rounded-lg font-mono ${isUp ? 'badge-up' : 'badge-down'}`}>
               {isUp ? '+' : ''}{priceChange.toFixed(2)} ({isUp ? '+' : ''}{pricePercent}%)
             </span>
           </div>
 
-          <div className="w-px h-8 bg-[var(--border)]" />
+          <div className="w-px h-6 sm:h-8 bg-[var(--border)] hidden sm:block" />
 
           {/* Stats grid */}
-          <div className="grid grid-cols-4 gap-x-6 gap-y-1">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-1 w-full sm:w-auto">
             {[
               { label: '开盘', value: lastData?.open.toFixed(2) },
               { label: '最高', value: lastData?.high.toFixed(2) },

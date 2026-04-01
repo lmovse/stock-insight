@@ -63,9 +63,9 @@ export default function IndicatorPanel({ config, onChange }: Props) {
 
   return (
     <>
-      <div className="flex items-center gap-4">
-        <span className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">指标</span>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+        <span className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider shrink-0">指标</span>
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {indicators.map(({ key, label }) => (
             <button
               key={key}
@@ -73,7 +73,7 @@ export default function IndicatorPanel({ config, onChange }: Props) {
               aria-pressed={config[key]}
               onClick={() => toggle(key)}
               onDoubleClick={() => handleIndicatorClick(label)}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${
+              className={`px-2 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all shrink-0 ${
                 config[key]
                   ? "pill-active"
                   : "pill-inactive"
