@@ -6,17 +6,17 @@ import { getKLineData } from "@/lib/stockApi";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ taskId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  const { taskId } = await params;
+  const { id } = await params;
 
   const run = await prisma.strategyRun.findFirst({
-    where: { id: taskId, userId: user.id },
+    where: { id, userId: user.id },
     include: { strategy: { include: { prompt: true } } },
   });
   if (!run) {
@@ -25,7 +25,7 @@ export async function GET(
 
   // Mark as running
   await prisma.strategyRun.update({
-    where: { id: taskId },
+    where: { id },
     data: { status: "running", startedAt: new Date() },
   });
 
@@ -53,7 +53,7 @@ export async function GET(
       // Check if cancelled via DB status
       const checkCancelled = async (): Promise<boolean> => {
         const r = await prisma.strategyRun.findUnique({
-          where: { id: taskId },
+          where: { id },
           select: { status: true },
         });
         return r?.status === "cancelled";
@@ -98,7 +98,7 @@ export async function GET(
 
             await prisma.strategyRunResult.create({
               data: {
-                runId: taskId,
+                runId: id,
                 stockCode,
                 result: parsed.result,
                 reason: parsed.reason,
@@ -125,7 +125,7 @@ export async function GET(
 
           await prisma.strategyRunResult.create({
             data: {
-              runId: taskId,
+              runId: id,
               stockCode,
               result: "错误",
               reason: errorMsg,
@@ -142,7 +142,7 @@ export async function GET(
       const finalStatus = await checkCancelled() ? "cancelled" : "completed";
       if (finalStatus === "completed") {
         await prisma.strategyRun.update({
-          where: { id: taskId },
+          where: { id },
           data: { status: "completed", finishedAt: new Date() },
         });
       }

@@ -6,21 +6,21 @@ import { prisma } from "@/lib/prisma";
 // to support multi-worker deployments
 export async function POST(
   _req: NextRequest,
-  { params }: { params: Promise<{ taskId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
 
-  const { taskId } = await params;
+  const { id } = await params;
 
   const run = await prisma.strategyRun.findFirst({
-    where: { id: taskId, userId: user.id },
+    where: { id, userId: user.id },
   });
   if (!run) return NextResponse.json({ error: "运行不存在" }, { status: 404 });
 
   // Update status to cancelled in DB - SSE handler polls this
   await prisma.strategyRun.update({
-    where: { id: taskId },
+    where: { id },
     data: { status: "cancelled", finishedAt: new Date() },
   });
 
