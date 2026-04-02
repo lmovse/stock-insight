@@ -51,7 +51,7 @@
   --surface-solid: #ffffff;
   --surface-raised: rgba(255, 255, 255, 0.85);
   --surface-raised-solid: #ffffff;
-  --surface-hover: rgba(255, 255, 255, 0.95);
+  --surface-hover: rgba(0, 0, 0, 0.08);
   --border: rgba(0, 0, 0, 0.08);
   --border-subtle: rgba(0, 0, 0, 0.05);
 

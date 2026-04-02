@@ -60,7 +60,7 @@ export default function Header() {
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               isActive(link.href)
                 ? "bg-accent/20 text-accent font-medium"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
             }`}
           >
             {link.label}
@@ -71,7 +71,7 @@ export default function Header() {
       {/* Mobile menu button */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="md:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:bg-white/10 transition-colors"
+        className="md:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
       >
         {mobileMenuOpen ? (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
