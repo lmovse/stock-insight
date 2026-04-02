@@ -51,59 +51,62 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-      <div className="w-full max-w-[95vw] sm:max-w-md p-4 sm:p-8 bg-[var(--surface)] border border-[var(--border)]">
-        <h1 className="text-2xl font-display font-bold text-[var(--text-primary)] mb-6">注册</h1>
+    <div className="h-screen flex items-center justify-center bg-[var(--background)] animate-page-enter">
+      <div className="glass-card rounded-2xl w-full max-w-[95vw] sm:max-w-md p-6 sm:p-8">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] mb-6">注册</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-[var(--text-muted)] mb-1">邮箱</label>
+            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">邮箱</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+              placeholder="输入邮箱地址"
+              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm text-[var(--text-muted)] mb-1">密码</label>
+            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">密码</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+              placeholder="至少6位密码"
+              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm text-[var(--text-muted)] mb-1">确认密码</label>
+            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">确认密码</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+              placeholder="再次输入密码"
+              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
               required
             />
           </div>
 
           {error && (
-            <div className="text-sm text-[var(--accent)]">{error}</div>
+            <div className="text-sm text-red-400">{error}</div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-[var(--accent)] text-white font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+            className="w-full py-2.5 rounded-lg text-sm font-semibold pill-active disabled:opacity-50"
           >
             {loading ? "注册中..." : "注册"}
           </button>
         </form>
 
         <div className="mt-4 text-center text-sm text-[var(--text-muted)]">
-          已有账号？<Link href="/login" className="text-[var(--accent)]">登录</Link>
+          已有账号？<Link href="/login" className="text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">登录</Link>
         </div>
       </div>
     </div>
