@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { callAI, buildPromptMessages, formatKLineData } from "@/lib/ai";
+import { getKLineData } from "@/lib/stockApi";
 
 export async function GET(
   req: NextRequest,
@@ -62,12 +63,9 @@ export async function GET(
         send("progress", { done, total, currentStock: stockCode });
 
         try {
-          // Get K-line data via HTTP API (same as stock page)
-          const apiUrl = `${req.nextUrl.origin}/api/stocks/${stockCode}/kline?period=daily&count=300`;
-          const apiRes = await fetch(apiUrl);
-          if (!apiRes.ok) throw new Error(`K-line API failed: ${apiRes.status}`);
-          const allData = await apiRes.json();
-          console.log(`[stream/${id}] ${stockCode}: API returned ${allData.length} records`);
+          // Get K-line data directly from database
+          const allData = await getKLineData(stockCode, "daily", 300);
+          console.log(`[stream/${id}] ${stockCode}: DB returned ${allData.length} records`);
 
           const start = parseInt(run.startDate.replace(/-/g, ""));
           const end = parseInt(run.endDate.replace(/-/g, ""));
