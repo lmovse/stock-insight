@@ -37,8 +37,8 @@ interface RunDetail {
 }
 
 type DialogContent =
-  | { type: "run"; strategyId: string; strategyName: string }
-  | { type: "history"; strategyId: string; strategyName: string }
+  | { type: "run" }
+  | { type: "history" }
   | null;
 
 export default function StrategiesPage() {
@@ -154,11 +154,11 @@ export default function StrategiesPage() {
     }
   };
 
-  const openRunDialog = (s: Strategy) => setDialog({ type: "run", strategyId: s.id, strategyName: s.name });
+  const openRunDialog = () => setDialog({ type: "run" });
 
-  const openHistoryDialog = async (s: Strategy) => {
-    setDialog({ type: "history", strategyId: s.id, strategyName: s.name });
-    const res = await fetch(`/api/strategy-runs?strategyId=${s.id}&limit=50`);
+  const openHistoryDialog = async () => {
+    setDialog({ type: "history" });
+    const res = await fetch(`/api/strategy-runs?limit=50`);
     if (res.ok) {
       const data = await res.json();
       setDialogRuns(data.runs || []);
@@ -176,12 +176,26 @@ export default function StrategiesPage() {
       {/* Header */}
       <div className="flex justify-between items-center shrink-0">
         <h1 className="text-xl font-bold text-[var(--text-primary)]">选股策略</h1>
-        <button
-          onClick={() => { fetchPrompts(); setShowNewForm(true); }}
-          className="px-4 py-2 rounded-lg text-sm font-semibold pill-active"
-        >
-          新建策略
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setDialog({ type: "run" })}
+            className="px-3 py-2 rounded-lg text-sm font-semibold border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors"
+          >
+            运行
+          </button>
+          <button
+            onClick={() => setDialog({ type: "history" })}
+            className="px-3 py-2 rounded-lg text-sm font-semibold border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          >
+            历史
+          </button>
+          <button
+            onClick={() => { fetchPrompts(); setShowNewForm(true); }}
+            className="px-4 py-2 rounded-lg text-sm font-semibold pill-active"
+          >
+            新建策略
+          </button>
+        </div>
       </div>
 
       {/* 新建表单 */}
@@ -309,12 +323,6 @@ export default function StrategiesPage() {
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                  <button onClick={() => openRunDialog(s)} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors">
-                    运行
-                  </button>
-                  <button onClick={() => openHistoryDialog(s)} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-                    历史
-                  </button>
                   <button
                     onClick={() => handleEdit(s)}
                     className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
@@ -355,7 +363,7 @@ export default function StrategiesPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] shrink-0">
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-bold text-[var(--text-primary)]">
-                  {dialog.type === "run" ? `运行策略：${dialog.strategyName}` : `运行历史：${dialog.strategyName}`}
+                  {dialog.type === "run" ? "运行策略" : "运行历史"}
                 </h2>
               </div>
               <button
