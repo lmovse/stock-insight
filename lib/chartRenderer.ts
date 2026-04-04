@@ -314,7 +314,7 @@ export class ChartRenderer {
 
   private getDrawingAreas(): { main: { y: number; h: number }; volume: { y: number; h: number }; macd: { y: number; h: number }; kdj: { y: number; h: number }; rsi: { y: number; h: number } } {
     const height = this.cssHeight;
-    const topPadding = 80;
+    const topPadding = 0;
     const main = { y: topPadding, h: Math.floor(height * MAIN_CHART_RATIO) - topPadding };
     const volume = { y: main.y + main.h, h: Math.floor(height * VOLUME_RATIO) };
     const macd = { y: volume.y + volume.h, h: Math.floor(height * MACD_RATIO) };
@@ -731,7 +731,7 @@ export class ChartRenderer {
     const step = (maxPrice - minPrice) / 4;
     for (let i = 0; i <= 4; i++) {
       const price = maxPrice - step * i;
-      const y = areaY + (areaH / 4) * i + 4;
+      const y = areaY + (areaH / 4) * i + 10;
       this.ctx.fillText(price.toFixed(2), labelX, y);
     }
 
