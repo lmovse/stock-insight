@@ -45,6 +45,7 @@ export default function StrategiesPage() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [dialogRuns, setDialogRuns] = useState<Run[]>([]);
   const [dialogHistoryLoading, setDialogHistoryLoading] = useState(false);
+  const [stockNames, setStockNames] = useState<Record<string, string>>({});
   const [showNewForm, setShowNewForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -164,7 +165,24 @@ export default function StrategiesPage() {
       const res = await fetch(`/api/strategy-runs?limit=50`);
       if (res.ok) {
         const data = await res.json();
-        setDialogRuns(data.runs || []);
+        const runs = data.runs || [];
+        setDialogRuns(runs);
+
+        // Fetch stock names for all unique codes
+        const uniqueCodes = [...new Set(runs.flatMap((r: Run) => JSON.parse(r.stockCodes) as string[]))];
+        const names: Record<string, string> = {};
+        await Promise.all(
+          uniqueCodes.map(async (code: string) => {
+            try {
+              const r = await fetch(`/api/stocks/${code}`);
+              if (r.ok) {
+                const info = await r.json();
+                names[code] = info.name || code;
+              }
+            } catch {}
+          })
+        );
+        setStockNames(names);
       }
     } finally {
       setDialogHistoryLoading(false);
@@ -176,14 +194,15 @@ export default function StrategiesPage() {
     setDialogRuns([]);
     setExpandedRunId(null);
     setDialogHistoryLoading(false);
+    setStockNames({});
   };
 
   return (
     <div className="h-[calc(100dvh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 gap-4 animate-page-enter">
       {/* Header */}
-      <div className="flex justify-between items-center shrink-0">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 shrink-0">
         <h1 className="text-xl font-bold text-[var(--text-primary)]">选股策略</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             onClick={openRunDialog}
             className="px-4 py-2 rounded-lg text-sm font-semibold pill-active"
@@ -451,7 +470,7 @@ export default function StrategiesPage() {
                                   <div className="space-y-2 max-h-64 overflow-y-auto">
                                     {detail.results.map((r, i) => (
                                       <div key={i} className="result-item flex flex-wrap gap-2 p-2 rounded-lg bg-[var(--background)]">
-                                        <span className="font-mono text-xs shrink-0 text-[var(--text-primary)]">{r.stockCode}</span>
+                                        <span className="font-mono text-xs shrink-0 text-[var(--text-primary)]">{stockNames[r.stockCode] || r.stockCode}</span>
                                         <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
                                           r.result === "符合" ? "bg-green-500/20 text-green-400" :
                                           r.result === "不符合" ? "bg-yellow-500/20 text-yellow-400" :
