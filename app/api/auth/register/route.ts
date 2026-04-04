@@ -5,14 +5,21 @@ import { signJWT, setAuthCookie } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const { email, password, invitationCode } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "邮箱和密码不能为空" }, { status: 400 });
+    if (!email || !password || !invitationCode) {
+      return NextResponse.json({ error: "邮箱、密码和邀请码不能为空" }, { status: 400 });
     }
 
     if (password.length < 6) {
       return NextResponse.json({ error: "密码至少6位" }, { status: 400 });
+    }
+
+    const code = await prisma.invitationCode.findUnique({
+      where: { code: invitationCode },
+    });
+    if (!code || code.usedAt) {
+      return NextResponse.json({ error: "邀请码无效或已使用" }, { status: 400 });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -20,11 +27,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "该邮箱已注册" }, { status: 409 });
     }
 
-    const passwordHash = await hashPassword(password);
-    const user = await prisma.user.create({
-      data: { email, passwordHash },
-      select: { id: true, email: true },
-    });
+    // Consume the invitation code and create user in a transaction
+    const [user] = await prisma.$transaction([
+      prisma.user.create({
+        data: { email, passwordHash: await hashPassword(password) },
+        select: { id: true, email: true },
+      }),
+      prisma.invitationCode.update({
+        where: { code: invitationCode },
+        data: { usedAt: new Date() },
+      }),
+    ]);
 
     const token = await signJWT({ userId: user.id, email: user.email });
     await setAuthCookie(token);

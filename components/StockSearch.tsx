@@ -2,15 +2,25 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "./UserProvider";
 import type { StockInfo } from "@/lib/types";
 
 export default function StockSearch() {
+  const { user } = useUser();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StockInfo[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  const handleFocus = () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    if (query) setOpen(true);
+  };
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); setOpen(false); return; }
@@ -54,10 +64,14 @@ export default function StockSearch() {
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => query && setOpen(true)}
+          onChange={(e) => {
+            if (!user) return;
+            setQuery(e.target.value);
+          }}
+          onFocus={handleFocus}
           placeholder="搜索股票..."
-          className="w-full px-3 py-1.5 pl-8 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl border border-[var(--border)] bg-[var(--surface)] backdrop-blur-sm focus:border-[var(--accent)] focus:outline-none transition-all font-medium"
+          disabled={!user}
+          className={`w-full px-3 py-1.5 pl-8 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl border border-[var(--border)] bg-[var(--surface)] backdrop-blur-sm focus:border-[var(--accent)] focus:outline-none transition-all font-medium ${!user ? 'cursor-not-allowed opacity-60' : ''}`}
         />
         <svg
           className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]"

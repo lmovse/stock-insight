@@ -10,7 +10,7 @@ interface User {
 interface UserContextType {
   user: User | null;
   loading: boolean;
-  refresh: () => void;
+  refresh: () => Promise<void>;
   logout: () => Promise<void>;
 }
 

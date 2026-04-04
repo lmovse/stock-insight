@@ -22,6 +22,14 @@ model User {
   drawingLines  DrawingLine[]
 }
 
+model InvitationCode {
+  code    String   @id @default(cuid())
+  usedAt  DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([usedAt])
+}
+
 model WatchlistGroup {
   id      String @id @default(cuid())
   userId  String

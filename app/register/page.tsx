@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useUser } from "@/components/UserProvider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, refresh } = useUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [invitationCode, setInvitationCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.push("/");
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +41,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, invitationCode }),
       });
 
       const data = await res.json();
@@ -41,8 +50,8 @@ export default function RegisterPage() {
         return;
       }
 
+      await refresh();
       router.push("/");
-      router.refresh();
     } catch {
       setError("网络错误");
     } finally {
@@ -87,6 +96,18 @@ export default function RegisterPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="再次输入密码"
+              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">邀请码</label>
+            <input
+              type="text"
+              value={invitationCode}
+              onChange={(e) => setInvitationCode(e.target.value)}
+              placeholder="输入邀请码"
               className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
               required
             />
