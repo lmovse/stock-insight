@@ -746,8 +746,9 @@ export class ChartRenderer {
     this.ctx.font = "10px JetBrains Mono, monospace";
     this.ctx.textAlign = "center";
 
-    // Show date labels at intervals
-    const interval = Math.max(1, Math.floor(visibleData.length / 6));
+    // Show fewer labels on mobile to avoid overlapping
+    const labelCount = this.cssWidth < MOBILE_BREAKPOINT ? 4 : 6;
+    const interval = Math.max(1, Math.floor(visibleData.length / labelCount));
     visibleData.forEach((d, i) => {
       if (i % interval !== 0) return;
       const x = this.paddingLeft + i * candleTotal + this.candleWidth / 2;
