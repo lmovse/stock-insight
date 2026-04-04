@@ -12,7 +12,7 @@ function LoginForm() {
   const { user, refresh } = useUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string; global?: string }>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -21,9 +21,19 @@ function LoginForm() {
     }
   }, [user, router, redirect]);
 
+  const validate = () => {
+    const errs: typeof errors = {};
+    if (!email) errs.email = "请输入邮箱";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "邮箱格式不正确";
+    if (!password) errs.password = "请输入密码";
+    return errs;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({});
     setLoading(true);
 
     try {
@@ -35,14 +45,14 @@ function LoginForm() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "登录失败");
+        setErrors({ global: data.error || "登录失败" });
         return;
       }
 
       await refresh();
       router.push(redirect);
     } catch {
-      setError("网络错误");
+      setErrors({ global: "网络错误" });
     } finally {
       setLoading(false);
     }
@@ -59,11 +69,11 @@ function LoginForm() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }}
               placeholder="输入邮箱地址"
-              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-              required
+              className={`w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors ${errors.email ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
             />
+            {errors.email && <p className="mt-1 text-xs" style={{ color: 'var(--accent)' }}>{errors.email}</p>}
           </div>
 
           <div>
@@ -71,15 +81,15 @@ function LoginForm() {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
               placeholder="输入密码"
-              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-              required
+              className={`w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors ${errors.password ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
             />
+            {errors.password && <p className="mt-1 text-xs" style={{ color: 'var(--accent)' }}>{errors.password}</p>}
           </div>
 
-          {error && (
-            <div className="text-sm text-red-400">{error}</div>
+          {errors.global && (
+            <div className="px-3 py-2.5 rounded-lg text-sm" style={{ background: 'var(--up-bg)', color: 'var(--up-color)' }}>{errors.global}</div>
           )}
 
           <button
