@@ -9,10 +9,37 @@ import ThemeToggle from "./ThemeToggle";
 import { useUser } from "./UserProvider";
 
 const navLinks = [
-  { href: "/stock/600519", label: "行情" },
-  { href: "/strategies", label: "策略" },
-  { href: "/prompts", label: "提示词" },
+  { href: "/stock/600519", label: "行情", icon: "chart" },
+  { href: "/strategies", label: "策略", icon: "strategy" },
+  { href: "/prompts", label: "提示词", icon: "prompt" },
 ];
+
+function NavIcon({ type, active }: { type: string; active?: boolean }) {
+  const color = active ? 'var(--accent)' : 'var(--text-secondary)';
+  if (type === "chart") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+      </svg>
+    );
+  }
+  if (type === "strategy") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+      </svg>
+    );
+  }
+  if (type === "prompt") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    );
+  }
+  return null;
+}
 
 export default function Header() {
   const pathname = usePathname();
@@ -59,12 +86,13 @@ export default function Header() {
           <Link
             key={link.href}
             href={link.href}
-            className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
               isActive(link.href)
                 ? "bg-accent/20 text-accent font-medium"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
             }`}
           >
+            <NavIcon type={link.icon} active={isActive(link.href)} />
             {link.label}
           </Link>
         ))}
@@ -109,12 +137,13 @@ export default function Header() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`px-4 py-2.5 text-sm transition-colors font-medium ${
+                    className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors font-medium ${
                       isActive(link.href)
                         ? "text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
                     }`}
                   >
+                    <NavIcon type={link.icon} active={isActive(link.href)} />
                     {link.label}
                   </Link>
                 ))}
@@ -125,8 +154,13 @@ export default function Header() {
                       await logout();
                       router.push("/login");
                     }}
-                    className="px-4 py-2.5 text-sm text-left transition-colors text-[var(--text-secondary)] hover:text-[var(--down-color)] hover:bg-[var(--surface-hover)]"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors text-[var(--text-secondary)] hover:text-[var(--down-color)] hover:bg-[var(--surface-hover)]"
                   >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
                     退出登录
                   </button>
                 )}

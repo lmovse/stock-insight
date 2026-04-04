@@ -91,10 +91,7 @@ export default function StockPage() {
 
       {/* Stock info strip - sticky */}
       <div className="info-strip shrink-0 px-3 sm:px-5 py-3 relative sticky top-0 z-10 bg-[var(--background)]">
-        {/* Left accent bar */}
-        <div className="accent-bar absolute left-0 top-3 bottom-3" />
-
-        <div className="flex flex-wrap items-center gap-3 sm:gap-5 pl-3">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-5">
           {/* Stock name */}
           <div>
             <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
