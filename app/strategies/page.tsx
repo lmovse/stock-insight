@@ -185,13 +185,13 @@ export default function StrategiesPage() {
         <h1 className="text-xl font-bold text-[var(--text-primary)]">选股策略</h1>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setDialog({ type: "run" })}
+            onClick={openRunDialog}
             className="px-4 py-2 rounded-lg text-sm font-semibold pill-active"
           >
             立即运行
           </button>
           <button
-            onClick={() => setDialog({ type: "history" })}
+            onClick={openHistoryDialog}
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
             运行历史
