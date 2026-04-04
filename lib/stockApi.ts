@@ -109,6 +109,10 @@ export async function getKLineData(
     });
   });
 
+  // candles is desc (newest first), grouped Map iterates in insertion order (newest first)
+  // so result is newest-first — reverse to chronological (oldest first) to match daily
+  result.reverse();
+
   return result.slice(-count);
 }
 

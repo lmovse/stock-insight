@@ -123,6 +123,7 @@ export default function HQChart({ code, klineData, indicators }: Props) {
       <canvas
         ref={canvasRef}
         className="w-full h-full"
+        style={{ touchAction: 'none' }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       />

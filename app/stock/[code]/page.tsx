@@ -55,7 +55,7 @@ export default function StockPage() {
   const isUp = priceChange >= 0;
 
   return (
-    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden animate-page-enter">
+    <div className="flex flex-col bg-[var(--background)] animate-page-enter" style={{ height: 'calc(100dvh - 52px)' }}>
 
       {/* Stock info strip - sticky */}
       <div className="info-strip shrink-0 px-3 sm:px-5 py-3 relative sticky top-0 z-10 bg-[var(--background)]">
@@ -111,9 +111,9 @@ export default function StockPage() {
       </div>
 
       {/* Main area */}
-      <main className="flex-1 flex flex-col min-h-0 p-4 gap-3">
+      <main className="flex-1 flex flex-col min-h-0 p-4 gap-3 overflow-y-auto">
         {/* Chart */}
-        <div className="flex-1 rounded-2xl overflow-hidden flex flex-col"
+        <div className="flex-1 rounded-2xl overflow-hidden flex flex-col min-h-[200px]"
           style={{ background: 'var(--surface-solid, var(--surface))', border: '1px solid var(--border-subtle)' }}
         >
           {/* Period selector */}

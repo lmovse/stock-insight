@@ -65,7 +65,11 @@ export class ChartRenderer {
   private scale: number = 1;
   private scrollOffset: number = 0;
   private isDragging: boolean = false;
+  private isTouchDragging: boolean = false;
+  private isPinching: boolean = false;
   private lastMouseX: number = 0;
+  private lastTouchX: number = 0;
+  private lastPinchDistance: number = 0;
   private cssWidth: number = 0;
   private cssHeight: number = 0;
   private crosshairX: number | null = null;
@@ -110,6 +114,59 @@ export class ChartRenderer {
     this.canvas.addEventListener("mouseup", this.handleMouseUp.bind(this));
     this.canvas.addEventListener("mouseleave", this.handleMouseUp.bind(this));
     this.canvas.addEventListener("wheel", this.handleWheel.bind(this), { passive: false });
+    this.canvas.addEventListener("touchstart", this.handleTouchStart.bind(this), { passive: false });
+    this.canvas.addEventListener("touchmove", this.handleTouchMove.bind(this), { passive: false });
+    this.canvas.addEventListener("touchend", this.handleTouchEnd.bind(this));
+  }
+
+  private handleTouchStart(e: TouchEvent) {
+    if (e.touches.length === 2) {
+      this.isPinching = true;
+      this.isTouchDragging = false;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      this.lastPinchDistance = Math.hypot(dx, dy);
+      return;
+    }
+    if (e.touches.length === 1) {
+      this.isTouchDragging = true;
+      this.lastTouchX = e.touches[0].clientX;
+    }
+  }
+
+  private handleTouchMove(e: TouchEvent) {
+    if (e.touches.length === 2 && this.isPinching) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const distance = Math.hypot(dx, dy);
+      const delta = (distance - this.lastPinchDistance) * 0.01;
+      this.setScale(this.scale + delta);
+      this.lastPinchDistance = distance;
+      return;
+    }
+    if (!this.isTouchDragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    const dx = e.touches[0].clientX - this.lastTouchX;
+    const candleTotal = this.candleWidth + this.candleGap;
+    const offsetDelta = Math.round(dx / candleTotal);
+    if (offsetDelta !== 0) {
+      this.setScrollOffset(this.scrollOffset - offsetDelta);
+      this.lastTouchX = e.touches[0].clientX;
+    }
+  }
+
+  private handleTouchEnd(e: TouchEvent) {
+    if (e.touches.length < 2) {
+      this.isPinching = false;
+    }
+    if (e.touches.length === 0) {
+      this.isTouchDragging = false;
+    }
+    if (e.touches.length === 1) {
+      this.isTouchDragging = true;
+      this.lastTouchX = e.touches[0].clientX;
+    }
   }
 
   private handleMouseDown(e: MouseEvent) {
