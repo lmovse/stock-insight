@@ -179,19 +179,19 @@ export default function StrategiesPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setDialog({ type: "run" })}
-            className="px-3 py-2 rounded-lg text-sm font-semibold border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-semibold pill-active"
           >
-            运行
+            立即运行
           </button>
           <button
             onClick={() => setDialog({ type: "history" })}
-            className="px-3 py-2 rounded-lg text-sm font-semibold border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
-            历史
+            运行历史
           </button>
           <button
             onClick={() => { fetchPrompts(); setShowNewForm(true); }}
-            className="px-4 py-2 rounded-lg text-sm font-semibold pill-active"
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
             新建策略
           </button>
@@ -363,7 +363,7 @@ export default function StrategiesPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] shrink-0">
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-bold text-[var(--text-primary)]">
-                  {dialog.type === "run" ? "运行策略" : "运行历史"}
+                  {dialog.type === "run" ? "立即运行" : "运行历史"}
                 </h2>
               </div>
               <button
