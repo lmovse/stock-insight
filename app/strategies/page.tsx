@@ -172,7 +172,7 @@ export default function StrategiesPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 gap-4 animate-page-enter">
+    <div className="h-[calc(100dvh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 gap-4 animate-page-enter">
       {/* Header */}
       <div className="flex justify-between items-center shrink-0">
         <h1 className="text-xl font-bold text-[var(--text-primary)]">选股策略</h1>
@@ -237,7 +237,7 @@ export default function StrategiesPage() {
       )}
 
       {/* 策略列表 */}
-      <div className="flex-1 overflow-y-auto space-y-3">
+      <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
         {strategies.map((s) => (
           <div key={s.id} className={`glass-card rounded-xl p-4 transition-all duration-300 ${editingId === s.id ? 'border-[var(--accent)]' : ''}`}>
             {editingId === s.id ? (
@@ -348,7 +348,7 @@ export default function StrategiesPage() {
         >
           <div
             ref={dialogRef}
-            className="glass-card rounded-2xl w-full max-w-[95vw] sm:max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-dialog-enter"
+            className="glass-card rounded-2xl w-full max-w-[95vw] sm:max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden animate-dialog-enter"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Dialog header */}
