@@ -166,7 +166,7 @@ export default function StockPage() {
                 { label: '振幅', value: `${displayAmplitude.toFixed(2)}%`, color: '' },
                 { label: '成交量', value: `${(displayData.volume / 10000).toFixed(2)}万`, color: '' },
                 { label: '成交额', value: formatAmount(displayData.amount ?? 0), color: '' },
-                { label: '日期', value: `${String(displayData.date).slice(4, 6)}/${String(displayData.date).slice(6, 8)}`, color: '' },
+                { label: '日期', value: `${String(displayData.date).slice(0, 4)}/${String(displayData.date).slice(4, 6)}/${String(displayData.date).slice(6, 8)}`, color: '' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="flex items-center justify-between gap-2 min-w-0">
                   <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider shrink-0">{label}</span>

@@ -752,7 +752,7 @@ export class ChartRenderer {
       if (i % interval !== 0) return;
       const x = this.paddingLeft + i * candleTotal + this.candleWidth / 2;
       const dateStr = String(d.date);
-      const label = `${dateStr.slice(4, 6)}/${dateStr.slice(6, 8)}`;
+      const label = `${dateStr.slice(0, 4)}/${dateStr.slice(4, 6)}/${dateStr.slice(6, 8)}`;
       this.ctx.fillText(label, x, y);
     });
 
