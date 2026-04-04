@@ -27,7 +27,7 @@ export default function Header() {
   return (
     <header className="header-bar relative h-[52px] px-2 sm:px-5 flex items-center gap-2 sm:gap-4">
       <Link href="/" className="flex items-center shrink-0 group">
-        <svg width="45" height="30" viewBox="0 0 45 30" fill="none">
+        <svg width="20" height="30" viewBox="0 0 20 30" fill="none">
           {/* Icon: candlestick bars, vertically centered around y=15 */}
           <rect x="0" y="5" width="3" height="20" rx="1" style={{ fill: 'var(--text-muted)' }}/>
           <rect x="0" y="12" width="3" height="6" rx="0.5" style={{ fill: 'var(--accent)' }}/>
@@ -35,8 +35,6 @@ export default function Header() {
           <rect x="5" y="10" width="3" height="10" rx="0.5" style={{ fill: 'var(--accent)' }}/>
           <rect x="10" y="7" width="3" height="16" rx="1" style={{ fill: 'var(--text-muted)' }}/>
           <rect x="10" y="13" width="3" height="4" rx="0.5" style={{ fill: 'var(--accent)' }}/>
-          {/* SI */}
-          <text x="20" y="22" fontFamily="'Plus Jakarta Sans', sans-serif" fontSize="16" fontWeight="800" letterSpacing="1" style={{ fill: 'var(--text-primary)' }}>SI</text>
         </svg>
       </Link>
 
