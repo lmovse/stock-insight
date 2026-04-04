@@ -71,7 +71,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }}
               placeholder="输入邮箱地址"
-              className={`w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors ${errors.email ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
+              className={`w-full px-3 py-2.5 rounded-lg text-base bg-[var(--surface-solid)] border text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors ${errors.email ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
             />
             {errors.email && <p className="mt-1 text-xs" style={{ color: 'var(--accent)' }}>{errors.email}</p>}
           </div>
@@ -83,7 +83,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
               placeholder="输入密码"
-              className={`w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors ${errors.password ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
+              className={`w-full px-3 py-2.5 rounded-lg text-base bg-[var(--surface-solid)] border text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors ${errors.password ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
             />
             {errors.password && <p className="mt-1 text-xs" style={{ color: 'var(--accent)' }}>{errors.password}</p>}
           </div>

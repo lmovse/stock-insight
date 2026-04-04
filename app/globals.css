@@ -453,6 +453,15 @@ button, a, input { transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1); }
   animation: dialogExit 0.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+.animate-menu-enter {
+  animation: menuEnter 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes menuEnter {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* ============================================
    FORM ENTER/EXIT ANIMATIONS
    ============================================ */

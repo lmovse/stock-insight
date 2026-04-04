@@ -28,7 +28,7 @@ export default function AuthButtons() {
 
   if (user) {
     return (
-      <div className="relative" ref={dropdownRef}>
+      <div className="relative hidden md:block" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
           className="px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] rounded-lg transition-all border border-[var(--border)]"

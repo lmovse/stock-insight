@@ -63,7 +63,7 @@ export default function RegisterPage() {
   };
 
   const fieldClass = (field: keyof typeof errors) =>
-    `w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors ${errors[field] ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`;
+    `w-full px-3 py-2.5 rounded-lg text-base bg-[var(--surface-solid)] border text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors ${errors[field] ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`;
 
   return (
     <div className="h-screen flex items-center justify-center bg-[var(--background)] animate-page-enter">

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import StockSearch from "./StockSearch";
 import AuthButtons from "./AuthButtons";
 import ThemeToggle from "./ThemeToggle";
+import { useUser } from "./UserProvider";
 
 const navLinks = [
   { href: "/stock/600519", label: "行情" },
@@ -15,7 +16,22 @@ const navLinks = [
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [mobileMenuOpen]);
 
   const isActive = (href: string) => {
     if (href === "/stock/600519") {
@@ -27,15 +43,10 @@ export default function Header() {
   return (
     <header className="header-bar relative h-[52px] px-2 sm:px-5 flex items-center gap-2 sm:gap-4">
       <Link href="/" className="flex items-center shrink-0 group">
-        <svg width="20" height="30" viewBox="0 0 20 30" fill="none">
-          {/* Icon: candlestick bars, vertically centered around y=15 */}
-          <rect x="0" y="5" width="3" height="20" rx="1" style={{ fill: 'var(--text-muted)' }}/>
-          <rect x="0" y="12" width="3" height="6" rx="0.5" style={{ fill: 'var(--accent)' }}/>
-          <rect x="5" y="3" width="3" height="24" rx="1" style={{ fill: 'var(--text-primary)' }}/>
-          <rect x="5" y="10" width="3" height="10" rx="0.5" style={{ fill: 'var(--accent)' }}/>
-          <rect x="10" y="7" width="3" height="16" rx="1" style={{ fill: 'var(--text-muted)' }}/>
-          <rect x="10" y="13" width="3" height="4" rx="0.5" style={{ fill: 'var(--accent)' }}/>
-        </svg>
+        <span style={{ fontFamily: "'Archivo', sans-serif", fontWeight: 800, fontSize: '18px', letterSpacing: '0.5px' }}>
+          <span style={{ color: 'var(--accent)' }}>STOCK</span>
+          <span style={{ color: 'var(--text-primary)' }}> INSIGHT</span>
+        </span>
       </Link>
 
       <div className="flex-1 min-w-0 mx-2">
@@ -78,32 +89,51 @@ export default function Header() {
         )}
       </button>
 
-      {/* Mobile dropdown menu */}
+      {/* Mobile dropdown menu - floating card */}
       {mobileMenuOpen && (
-        <div className="absolute top-[52px] left-0 right-0 z-50 border-t border-[var(--border)] md:hidden"
-          style={{ background: 'var(--surface)' }}>
+        <>
+          {/* Backdrop */}
           <div
-            className="backdrop-blur-md"
-            style={{ background: 'oklch(from var(--surface) l c h / 0.8)' }}
-          >
-            <div className="flex flex-col gap-1 p-3">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-2.5 text-sm rounded-lg transition-colors font-medium ${
-                    isActive(link.href)
-                      ? "text-[var(--accent)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            className="fixed inset-0 z-40 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Card */}
+          <div ref={menuRef} className="absolute left-0 right-0 top-[52px] z-50 md:hidden animate-menu-enter">
+            <div
+              className="mx-2 rounded-xl shadow-lg border overflow-hidden"
+              style={{ background: 'var(--surface-solid, var(--surface))', borderColor: 'var(--border)' }}
+            >
+              <div className="flex flex-col py-1">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`px-4 py-2.5 text-sm transition-colors font-medium ${
+                      isActive(link.href)
+                        ? "text-[var(--accent)]"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                {user && (
+                  <button
+                    onClick={async () => {
+                      setMobileMenuOpen(false);
+                      await logout();
+                      router.push("/login");
+                    }}
+                    className="px-4 py-2.5 text-sm text-left transition-colors text-[var(--text-secondary)] hover:text-[var(--down-color)] hover:bg-[var(--surface-hover)]"
+                  >
+                    退出登录
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <div className="flex items-center gap-1 sm:gap-2">
