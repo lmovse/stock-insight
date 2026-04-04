@@ -26,25 +26,20 @@ export default function Header() {
 
   return (
     <header className="header-bar relative h-[52px] px-2 sm:px-5 flex items-center gap-2 sm:gap-4">
-      <Link href="/" className="flex items-center gap-1 sm:gap-2 shrink-0 group">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="items-center">
-          <defs>
-            <linearGradient id="logoGrad" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="var(--text-primary)" />
-              <stop offset="100%" stopColor="var(--text-muted)" />
-            </linearGradient>
-          </defs>
-          <path d="M3 20V9l6-6 4 4 8-9v16" stroke="url(#logoGrad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#logoShadow)"/>
-          <path d="M3 20h18" stroke="url(#logoGrad)" strokeWidth="1.5" strokeLinecap="round"/>
-          <defs>
-            <filter id="logoShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="var(--text-primary)" floodOpacity="0.4"/>
-            </filter>
-          </defs>
+      <Link href="/" className="flex items-center shrink-0 group">
+        <svg width="165" height="30" viewBox="0 0 165 30" fill="none">
+          {/* Icon: candlestick bars, vertically centered around y=15 */}
+          <rect x="0" y="5" width="3" height="20" rx="1" style={{ fill: 'var(--text-muted)' }}/>
+          <rect x="0" y="12" width="3" height="6" rx="0.5" style={{ fill: 'var(--accent)' }}/>
+          <rect x="5" y="3" width="3" height="24" rx="1" style={{ fill: 'var(--text-primary)' }}/>
+          <rect x="5" y="10" width="3" height="10" rx="0.5" style={{ fill: 'var(--accent)' }}/>
+          <rect x="10" y="7" width="3" height="16" rx="1" style={{ fill: 'var(--text-muted)' }}/>
+          <rect x="10" y="13" width="3" height="4" rx="0.5" style={{ fill: 'var(--accent)' }}/>
+          {/* STOCK */}
+          <text x="20" y="22" fontFamily="'Plus Jakarta Sans', sans-serif" fontSize="15" fontWeight="800" letterSpacing="1" style={{ fill: 'var(--text-primary)' }}>STOCK</text>
+          {/* INSIGHT */}
+          <text x="87" y="22" fontFamily="'Plus Jakarta Sans', sans-serif" fontSize="15" fontWeight="300" letterSpacing="1" style={{ fill: 'var(--accent)' }}>INSIGHT</text>
         </svg>
-        <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors hidden sm:inline">
-          StockInsight
-        </span>
       </Link>
 
       <div className="flex-1 min-w-0 mx-2">
