@@ -156,7 +156,7 @@ export default function StockPage() {
 
           {/* OHLCV info panel */}
           {displayData && (
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-4 gap-y-1 px-4 py-2 border-b border-[var(--border-subtle)] shrink-0">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-2 sm:gap-x-4 px-2 sm:px-4 py-2 border-b border-[var(--border-subtle)] shrink-0">
               {[
                 { label: '开盘', value: displayData.open.toFixed(2), color: '' },
                 { label: '最高', value: displayData.high.toFixed(2), color: 'var(--up-color)' },
@@ -168,9 +168,9 @@ export default function StockPage() {
                 { label: '成交额', value: formatAmount(displayData.amount ?? 0), color: '' },
                 { label: '日期', value: `${String(displayData.date).slice(4, 6)}/${String(displayData.date).slice(6, 8)}`, color: '' },
               ].map(({ label, value, color }) => (
-                <div key={label} className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{label}</span>
-                  <span className="text-xs font-mono font-medium" style={{ color: color || 'var(--text-primary)' }}>{value}</span>
+                <div key={label} className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider shrink-0">{label}</span>
+                  <span className="text-xs font-mono font-medium truncate" style={{ color: color || 'var(--text-primary)' }}>{value}</span>
                 </div>
               ))}
             </div>
