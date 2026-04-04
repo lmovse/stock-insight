@@ -44,6 +44,7 @@ type DialogContent =
 export default function StrategiesPage() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [dialogRuns, setDialogRuns] = useState<Run[]>([]);
+  const [dialogHistoryLoading, setDialogHistoryLoading] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -158,10 +159,15 @@ export default function StrategiesPage() {
 
   const openHistoryDialog = async () => {
     setDialog({ type: "history" });
-    const res = await fetch(`/api/strategy-runs?limit=50`);
-    if (res.ok) {
-      const data = await res.json();
-      setDialogRuns(data.runs || []);
+    setDialogHistoryLoading(true);
+    try {
+      const res = await fetch(`/api/strategy-runs?limit=50`);
+      if (res.ok) {
+        const data = await res.json();
+        setDialogRuns(data.runs || []);
+      }
+    } finally {
+      setDialogHistoryLoading(false);
     }
   };
 
@@ -169,6 +175,7 @@ export default function StrategiesPage() {
     setDialog(null);
     setDialogRuns([]);
     setExpandedRunId(null);
+    setDialogHistoryLoading(false);
   };
 
   return (
@@ -378,6 +385,11 @@ export default function StrategiesPage() {
             <div className="flex-1 overflow-y-auto p-6">
               {dialog.type === "run" ? (
                 <StrategyRunner />
+              ) : dialogHistoryLoading ? (
+                <div className="flex items-center justify-center py-12 gap-3">
+                  <div className="w-6 h-6 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+                  <span className="text-sm text-[var(--text-muted)]">加载中...</span>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {dialogRuns.length === 0 ? (
