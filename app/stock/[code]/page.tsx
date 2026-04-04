@@ -95,20 +95,12 @@ export default function StockPage() {
         <div className="accent-bar absolute left-0 top-3 bottom-3" />
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-5 pl-3">
-          {/* Stock badge + name */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-sm"
-              style={{ background: 'var(--accent)' }}
-            >
-              <span className="hidden xs:inline">{code.slice(0, 2)}</span>
-              <span className="xs:hidden">{code.slice(0, 1)}</span>
+          {/* Stock name */}
+          <div>
+            <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
+              {stockInfo?.name || code}
             </div>
-            <div>
-              <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
-                {stockInfo?.name || code}
-              </div>
-              <div className="text-xs text-[var(--text-muted)] font-mono hidden sm:block">{code}</div>
-            </div>
+            <div className="text-xs text-[var(--text-muted)] font-mono hidden sm:block">{code}</div>
           </div>
 
           <div className="w-px h-6 sm:h-8 bg-[var(--border)] hidden sm:block" />
