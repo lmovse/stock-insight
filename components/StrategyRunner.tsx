@@ -33,6 +33,7 @@ export default function StrategyRunner() {
   const [progress, setProgress] = useState({ done: 0, total: 0, currentStock: "" });
   const [results, setResults] = useState<RunResult[]>([]);
   const [taskId, setTaskId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/strategies")
@@ -51,6 +52,7 @@ export default function StrategyRunner() {
 
     setStatus("starting");
     setResults([]);
+    setErrorMessage(null);
     setProgress({ done: 0, total: stockCodes.length * selectedStrategyIds.length, currentStock: "" });
 
     const strategyId = selectedStrategyIds[0];
@@ -62,6 +64,8 @@ export default function StrategyRunner() {
     });
 
     if (!runRes.ok) {
+      const err = await runRes.json().catch(() => ({}));
+      setErrorMessage(err.error || "启动失败");
       setStatus("failed");
       return;
     }
@@ -86,7 +90,16 @@ export default function StrategyRunner() {
       eventSource.close();
     });
 
-    eventSource.addEventListener("error", () => {
+    eventSource.addEventListener("error", (e) => {
+      setErrorMessage("SSE 连接失败，请检查网络或刷新重试");
+      setStatus("failed");
+      eventSource.close();
+    });
+
+    eventSource.addEventListener("stream_error", (e) => {
+      // Custom error event from stream
+      const data = JSON.parse(e.data);
+      setErrorMessage(data.message || "运行出错");
       setStatus("failed");
       eventSource.close();
     });
@@ -198,6 +211,7 @@ export default function StrategyRunner() {
               {status === "completed" && <span className="text-sm text-green-400">已完成</span>}
               {status === "cancelled" && <span className="text-sm text-yellow-400">已取消</span>}
               {status === "failed" && <span className="text-sm text-red-400">失败</span>}
+              {errorMessage && <span className="text-sm text-red-400/70">{errorMessage}</span>}
             </div>
           )}
         </div>

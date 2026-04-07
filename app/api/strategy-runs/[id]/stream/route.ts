@@ -42,6 +42,14 @@ export async function GET(
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       };
 
+      // Check AI configuration
+      if (!aiOptions.apiKey || !aiOptions.baseURL) {
+        send("stream_error", { message: "AI 配置不完整，请检查 OPENAI_API_KEY 和 OPENAI_BASE_URL 环境变量" });
+        await prisma.strategyRun.update({ where: { id }, data: { status: "failed" } });
+        controller.close();
+        return;
+      }
+
       let done = 0;
 
       // Check if cancelled via DB status
