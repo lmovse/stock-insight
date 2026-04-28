@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { StockInfo, KLineData } from "./types";
+import { Prisma } from "@prisma/client";
 import { default as pinyin } from "pinyin";
 
 // STYLE_NORMAL = 0 (no tones)
@@ -36,7 +37,7 @@ export async function searchStocks(query: string): Promise<StockInfo[]> {
     take: 20,
     orderBy: { name: "asc" },
   });
-  return stocks.map((s) => {
+  return stocks.map((s: Prisma.StockBasicGetPayload<object>) => {
     const { code, market } = tsCodeToCode(s.tsCode);
     return { code, name: s.name, market };
   });

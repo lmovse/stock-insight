@@ -19,7 +19,7 @@ export async function GET() {
 
   // Get stock info and latest candle for each item
   const result = await Promise.all(
-    items.map(async (item) => {
+    items.map(async (item: { id: string; stockCode: string; groupId: string | null; addedAt: Date; group: { name: string } | null }) => {
       const tsCode = codeToTsCode(item.stockCode);
       const stock = await prisma.stockBasic.findUnique({ where: { tsCode } });
       const latestCandle = await prisma.dailyCandle.findFirst({

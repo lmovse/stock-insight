@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --turbo",
     "start": "next start",
     "lint": "eslint",
     "sync": "tsx jobs/sync.ts"
@@ -14,11 +14,7 @@
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
-    "gray-matter": "^4.0.3",
-    "highlight.js": "^11.11.1",
-    "isomorphic-git": "^1.37.2",
     "jose": "^6.2.2",
-    "jszip": "^3.10.1",
     "next": "16.1.6",
     "node-cron": "^4.2.1",
     "pinyin": "^4.0.0",
@@ -27,8 +23,6 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
-    "rehype-highlight": "^7.0.2",
-    "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
