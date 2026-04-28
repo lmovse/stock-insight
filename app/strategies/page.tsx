@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import StrategyRunner from "@/components/StrategyRunner";
@@ -14,38 +15,12 @@ interface Strategy {
   createdAt: string;
 }
 
-interface Run {
-  id: string;
-  status: string;
-  createdAt: string;
-  strategy: { name: string };
-  stockCodes: string;
-  startDate: string;
-  endDate: string;
-}
-
-interface RunDetail {
-  id: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  stockCodes: string;
-  strategy: { name: string; prompt: { name: string; content: string } };
-  results: { stockCode: string; result: string; reason: string | null }[];
-  startedAt: string | null;
-  finishedAt: string | null;
-}
-
 type DialogContent =
   | { type: "run" }
-  | { type: "history" }
   | null;
 
 export default function StrategiesPage() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
-  const [dialogRuns, setDialogRuns] = useState<Run[]>([]);
-  const [dialogHistoryLoading, setDialogHistoryLoading] = useState(false);
-  const [stockNames, setStockNames] = useState<Record<string, string>>({});
   const [showNewForm, setShowNewForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -60,10 +35,6 @@ export default function StrategiesPage() {
   const [editPromptId, setEditPromptId] = useState("");
 
   const [dialog, setDialog] = useState<DialogContent>(null);
-  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  const [runDetails, setRunDetails] = useState<Record<string, RunDetail>>({});
-
-  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchStrategies();
@@ -141,61 +112,7 @@ export default function StrategiesPage() {
     }
   };
 
-  const toggleRunExpand = async (runId: string) => {
-    if (expandedRunId === runId) {
-      setExpandedRunId(null);
-      return;
-    }
-    setExpandedRunId(runId);
-    if (!runDetails[runId]) {
-      const res = await fetch(`/api/strategy-runs/${runId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRunDetails((prev) => ({ ...prev, [runId]: data }));
-      }
-    }
-  };
-
   const openRunDialog = () => setDialog({ type: "run" });
-
-  const openHistoryDialog = async () => {
-    setDialog({ type: "history" });
-    setDialogHistoryLoading(true);
-    try {
-      const res = await fetch(`/api/strategy-runs?limit=50`);
-      if (res.ok) {
-        const data = await res.json();
-        const runs = data.runs || [];
-        setDialogRuns(runs);
-
-        // Fetch stock names for all unique codes
-        const uniqueCodes = [...new Set(runs.flatMap((r: Run) => JSON.parse(r.stockCodes) as string[]))];
-        const names: Record<string, string> = {};
-        await Promise.all(
-          uniqueCodes.map(async (code: string) => {
-            try {
-              const r = await fetch(`/api/stocks/${code}`);
-              if (r.ok) {
-                const info = await r.json();
-                names[code] = info.name || code;
-              }
-            } catch {}
-          })
-        );
-        setStockNames(names);
-      }
-    } finally {
-      setDialogHistoryLoading(false);
-    }
-  };
-
-  const closeDialog = () => {
-    setDialog(null);
-    setDialogRuns([]);
-    setExpandedRunId(null);
-    setDialogHistoryLoading(false);
-    setStockNames({});
-  };
 
   return (
     <div className="h-[calc(100dvh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 gap-4 animate-page-enter">
@@ -209,12 +126,12 @@ export default function StrategiesPage() {
           >
             立即运行
           </button>
-          <button
-            onClick={openHistoryDialog}
+          <Link
+            href="/strategies/runs"
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
             运行历史
-          </button>
+          </Link>
           <button
             onClick={() => { fetchPrompts(); setShowNewForm(true); }}
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
@@ -378,10 +295,9 @@ export default function StrategiesPage() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) closeDialog(); }}
+          onClick={(e) => { if (e.target === e.currentTarget) setDialog(null); }}
         >
           <div
-            ref={dialogRef}
             className="glass-card rounded-2xl w-full max-w-[95vw] sm:max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden animate-dialog-enter"
             onClick={(e) => e.stopPropagation()}
           >
@@ -389,11 +305,11 @@ export default function StrategiesPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] shrink-0">
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-bold text-[var(--text-primary)]">
-                  {dialog.type === "run" ? "立即运行" : "运行历史"}
+                  立即运行
                 </h2>
               </div>
               <button
-                onClick={closeDialog}
+                onClick={() => setDialog(null)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors text-lg"
               >
                 ✕
@@ -402,105 +318,7 @@ export default function StrategiesPage() {
 
             {/* Dialog content */}
             <div className="flex-1 overflow-y-auto p-6">
-              {dialog.type === "run" ? (
-                <StrategyRunner />
-              ) : dialogHistoryLoading ? (
-                <div className="flex items-center justify-center py-12 gap-3">
-                  <div className="w-6 h-6 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
-                  <span className="text-sm text-[var(--text-muted)]">加载中...</span>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {dialogRuns.length === 0 ? (
-                    <p className="text-sm text-[var(--text-muted)] text-center py-8">暂无运行记录</p>
-                  ) : (
-                    dialogRuns.map((run) => {
-                      const stockCodes = JSON.parse(run.stockCodes) as string[];
-                      const isExpanded = expandedRunId === run.id;
-                      const detail = runDetails[run.id];
-                      return (
-                        <div key={run.id} className="glass-card rounded-xl p-4">
-                          <button
-                            onClick={() => toggleRunExpand(run.id)}
-                            className="w-full flex flex-wrap items-start justify-between gap-3 hover:opacity-80 transition-opacity"
-                          >
-                            <div className="flex-1 min-w-0 text-left">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-sm font-semibold text-[var(--text-primary)]">{run.strategy.name}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-                                  run.status === "completed" ? "bg-green-500/20 text-green-400" :
-                                  run.status === "running" ? "bg-blue-500/20 text-blue-400" :
-                                  run.status === "cancelled" ? "bg-gray-500/20 text-gray-400" :
-                                  "bg-red-500/20 text-red-400"
-                                }`}>
-                                  {run.status === "completed" ? "已完成" :
-                                   run.status === "running" ? "运行中" :
-                                   run.status === "cancelled" ? "已取消" : "失败"}
-                                </span>
-                              </div>
-                              <p className="text-xs text-[var(--text-muted)] mt-1">
-                                {run.startDate} ~ {run.endDate} · {stockCodes.length} 支股票
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="text-xs text-[var(--text-muted)]">
-                                {new Date(run.createdAt).toLocaleDateString()}
-                              </span>
-                              <span className={`text-xs text-[var(--text-muted)] transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-                                ▶
-                              </span>
-                            </div>
-                          </button>
-
-                          {isExpanded && (
-                            <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] form-slide-enter">
-                              {detail ? (
-                                <>
-                                  <div className="flex gap-4 mb-4">
-                                    <span className="text-green-400 text-sm">
-                                      符合: {detail.results.filter((r) => r.result === "符合").length}
-                                    </span>
-                                    <span className="text-yellow-400 text-sm">
-                                      不符合: {detail.results.filter((r) => r.result === "不符合").length}
-                                    </span>
-                                    <span className="text-red-400 text-sm">
-                                      错误: {detail.results.filter((r) => r.result === "错误").length}
-                                    </span>
-                                  </div>
-                                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                                    {detail.results.map((r, i) => (
-                                      <div key={i} className="result-item flex flex-wrap gap-2 p-2 rounded-lg bg-[var(--background)]">
-                                        <span className="font-mono text-xs shrink-0 text-[var(--text-primary)]">{stockNames[r.stockCode] || r.stockCode}</span>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-                                          r.result === "符合" ? "bg-green-500/20 text-green-400" :
-                                          r.result === "不符合" ? "bg-yellow-500/20 text-yellow-400" :
-                                          "bg-red-500/20 text-red-400"
-                                        }`}>
-                                          {r.result}
-                                        </span>
-                                        <div className="w-full text-xs text-[var(--text-muted)] leading-relaxed prose">
-                                          {r.reason ? (
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{r.reason}</ReactMarkdown>
-                                          ) : "无"}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </>
-                              ) : (
-                                <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-                                  <div className="w-4 h-4 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
-                                  加载中...
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
+              {dialog.type === "run" && <StrategyRunner />}
             </div>
           </div>
         </div>
