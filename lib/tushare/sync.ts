@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import { tushareGet, rowsToObjects, TushareError, parseTradeDate, withRetry } from './client';
 import type { DailyItem, StockBasicItem, IndexBasicItem, IndexDailyItem } from './types';
-import { toPinyin } from '@/lib/stockApi';
+import { toPinyin } from '@/lib/pinyin';
 
 const prisma = new PrismaClient();
 

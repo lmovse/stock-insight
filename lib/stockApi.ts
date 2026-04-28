@@ -1,15 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { StockInfo, KLineData } from "./types";
 import { Prisma } from "@prisma/client";
-import { default as pinyin } from "pinyin";
-
-// STYLE_NORMAL = 0 (no tones)
-export function toPinyin(name: string): string {
-  return (pinyin(name, { style: 0 }) as string[][])
-    .flat()
-    .join("")
-    .toLowerCase();
-}
 
 function codeToTsCode(code: string): string {
   const c = code.startsWith("0") || code.startsWith("3") ? "SZ" : code.startsWith("4") || code.startsWith("8") ? "BJ" : "SH";
@@ -23,7 +14,12 @@ function tsCodeToCode(tsCode: string): { code: string; market: "sh" | "sz" | "bj
 }
 
 export async function searchStocks(query: string): Promise<StockInfo[]> {
-  const queryPinyin = toPinyin(query);
+  // Only import pinyin when needed (search with Chinese characters)
+  let queryPinyin: string | undefined;
+  if (/[\u4e00-\u9fa5]/.test(query)) {
+    const { toPinyin } = await import("./pinyin");
+    queryPinyin = toPinyin(query);
+  }
   const pinyinCondition = queryPinyin ? [{ pinyin: { contains: queryPinyin } }] : [];
 
   const stocks = await prisma.stockBasic.findMany({

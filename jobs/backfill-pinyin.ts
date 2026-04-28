@@ -1,7 +1,7 @@
 // jobs/backfill-pinyin.ts
 // Run with: npx tsx jobs/backfill-pinyin.ts
 import { PrismaClient } from '@prisma/client';
-import { toPinyin } from '../lib/stockApi';
+import { toPinyin } from '../lib/pinyin';
 
 const prisma = new PrismaClient();
 
