@@ -1,4 +1,4 @@
-import pinyin from "pinyin";
+import { pinyin } from "pinyin";
 
 // STYLE_NORMAL = 0 (no tones)
 export function toPinyin(name: string): string {

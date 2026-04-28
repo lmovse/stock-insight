@@ -14,9 +14,9 @@ function tsCodeToCode(tsCode: string): { code: string; market: "sh" | "sz" | "bj
 }
 
 export async function searchStocks(query: string): Promise<StockInfo[]> {
-  // Only import pinyin when needed (search with Chinese characters)
+  // Always try to convert to pinyin for search
   let queryPinyin: string | undefined;
-  if (/[\u4e00-\u9fa5]/.test(query)) {
+  if (/[\u4e00-\u9fa5]/.test(query) || /^[a-zA-Z]/.test(query)) {
     const { toPinyin } = await import("./pinyin");
     queryPinyin = toPinyin(query);
   }
