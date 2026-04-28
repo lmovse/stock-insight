@@ -15,6 +15,7 @@ interface WatchlistItem {
     low: number;
     close: number;
     vol: number;
+    prevClose: number;
   } | null;
 }
 
@@ -44,10 +45,10 @@ export default function FavoritesPage() {
 
   const calculateChange = (item: WatchlistItem) => {
     if (!item.latestCandle) return { pct: "--", isUp: null, change: 0 };
-    const { open, close } = item.latestCandle;
-    if (open === 0) return { pct: "--", isUp: null, change: 0 };
-    const change = close - open;
-    const pct = (change / open) * 100;
+    const { close, prevClose } = item.latestCandle;
+    if (prevClose === 0) return { pct: "--", isUp: null, change: 0 };
+    const change = close - prevClose;
+    const pct = (change / prevClose) * 100;
     return {
       pct: (pct >= 0 ? "+" : "") + pct.toFixed(2) + "%",
       change: change,
@@ -138,7 +139,7 @@ export default function FavoritesPage() {
                         <div className="text-right">
                           <div className="text-xs text-[var(--text-muted)]">今涨跌幅</div>
                           <div className={`font-mono text-sm font-semibold ${
-                            isUp === true ? "text-green-400" : isUp === false ? "text-red-400" : "text-[var(--text-muted)]"
+                            isUp === true ? "text-[var(--up-color)]" : isUp === false ? "text-[var(--down-color)]" : "text-[var(--text-muted)]"
                           }`}>
                             {pct}
                           </div>
@@ -146,7 +147,7 @@ export default function FavoritesPage() {
                         <div className="text-right hidden sm:block">
                           <div className="text-xs text-[var(--text-muted)]">今涨跌</div>
                           <div className={`font-mono text-sm font-semibold ${
-                            isUp === true ? "text-green-400" : isUp === false ? "text-red-400" : "text-[var(--text-muted)]"
+                            isUp === true ? "text-[var(--up-color)]" : isUp === false ? "text-[var(--down-color)]" : "text-[var(--text-muted)]"
                           }`}>
                             {change >= 0 ? "+" : ""}{change.toFixed(2)}
                           </div>

@@ -22,10 +22,13 @@ export async function GET() {
     items.map(async (item: { id: string; stockCode: string; groupId: string | null; addedAt: Date; group: { name: string } | null }) => {
       const tsCode = codeToTsCode(item.stockCode);
       const stock = await prisma.stockBasic.findUnique({ where: { tsCode } });
-      const latestCandle = await prisma.dailyCandle.findFirst({
+      const candles = await prisma.dailyCandle.findMany({
         where: { tsCode },
         orderBy: { tradeDate: "desc" },
+        take: 2,
       });
+      const latestCandle = candles[0];
+      const prevCandle = candles[1];
 
       return {
         id: item.id,
@@ -42,6 +45,7 @@ export async function GET() {
               low: latestCandle.low,
               close: latestCandle.close,
               vol: latestCandle.vol,
+              prevClose: prevCandle?.close ?? latestCandle.open,
             }
           : null,
       };

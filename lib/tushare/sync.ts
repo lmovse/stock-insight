@@ -201,7 +201,7 @@ export async function syncAllStockHistory() {
     }
 
     let totalInserted = 0;
-    let failedStocks: string[] = [];
+    const failedStocks: string[] = [];
 
     for (let i = startIdx; i < stocks.length; i++) {
       const { tsCode } = stocks[i];
@@ -272,7 +272,7 @@ export async function syncAllStockHistory() {
 }
 
 // ─── sync_daily_candles ──────────────────────────────────────────────────────
-export async function syncDailyCandles(targetDate?: string) {
+export async function syncDailyCandles() {
   await upsertSyncLog('sync_daily_candles', 'running');
 
   try {
@@ -418,11 +418,19 @@ export async function syncIndexDaily(date?: string) {
   try {
     const targetDate = date || (await getLastSyncDate('sync_index_daily')) || todayStr();
 
-    const items = await withRetry(() =>
-      tushareGet<IndexDailyItem>('index_daily', {
+    let items;
+    try {
+      items = await tushareGet<IndexDailyItem>('index_daily', {
         trade_date: targetDate,
-      }, 'ts_code,trade_date,close,vol,amount')
-    );
+      }, 'ts_code,trade_date,close,vol,amount');
+    } catch (err) {
+      if (err instanceof TushareError && err.code === 40203) {
+        console.warn('[sync] index_daily no permission, skipping this sync');
+        await upsertSyncLog('sync_index_daily', 'failed', 0, 0, 0, 'No permission (code 40203)');
+        return;
+      }
+      throw err;
+    }
 
     const records = rowsToObjects(
       ['ts_code','trade_date','close','vol','amount'],
@@ -457,11 +465,6 @@ export async function syncIndexDaily(date?: string) {
     await upsertSyncLog('sync_index_daily', 'success', records.length, inserted, 0);
     console.log(`[sync] index_daily done: ${inserted} records for ${targetDate}`);
   } catch (err) {
-    if (err instanceof TushareError && err.code === 40203) {
-      console.warn('[sync] index_daily no permission, skipping');
-      await upsertSyncLog('sync_index_daily', 'failed', 0, 0, 0, 'No permission: ' + err.message);
-      return;
-    }
     const msg = err instanceof Error ? err.message : String(err);
     await upsertSyncLog('sync_index_daily', 'failed', 0, 0, 0, msg);
     console.error(`[sync] index_daily failed:`, err);
@@ -474,6 +477,6 @@ export async function runFullSync() {
   await syncStockBasics();
   await syncDailyCandles();
   await syncIndexBasics();
-  await syncIndexDaily();
+  // index_daily requires pro permission, skip
   console.log('[sync] === full sync complete ===');
 }
