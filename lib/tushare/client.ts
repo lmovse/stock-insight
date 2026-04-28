@@ -1,6 +1,6 @@
 // lib/tushare/client.ts
 import axios from 'axios';
-import type { TushareResponse } from './types.js';
+import type { TushareResponse } from './types';
 
 const BASE_URL = 'https://api.tushare.pro';
 const REQUEST_INTERVAL = 1200; // ms between requests (50/min limit)

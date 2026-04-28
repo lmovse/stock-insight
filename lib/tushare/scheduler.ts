@@ -1,5 +1,5 @@
 import cron, { ScheduledTask } from 'node-cron';
-import { syncDailyCandles, syncIndexBasics, syncIndexDaily, syncMairuiStockList } from './sync.js';
+import { syncDailyCandles, syncIndexBasics, syncIndexDaily, syncMairuiStockList } from './sync';
 
 interface TaskConfig {
   name: string;

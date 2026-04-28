@@ -1,8 +1,8 @@
 // lib/tushare/sync.ts
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
-import { tushareGet, rowsToObjects, TushareError, parseTradeDate, withRetry } from './client.js';
-import type { DailyItem, StockBasicItem, IndexBasicItem, IndexDailyItem } from './types.js';
+import { tushareGet, rowsToObjects, TushareError, parseTradeDate, withRetry } from './client';
+import type { DailyItem, StockBasicItem, IndexBasicItem, IndexDailyItem } from './types';
 import { toPinyin } from '@/lib/stockApi';
 
 const prisma = new PrismaClient();
@@ -16,6 +16,16 @@ function formatDate(date: Date): string {
 
 function todayStr(): string {
   return formatDate(new Date());
+}
+
+function nextDate(dateStr: string): string {
+  const date = new Date(
+    parseInt(dateStr.slice(0, 4)),
+    parseInt(dateStr.slice(4, 6)) - 1,
+    parseInt(dateStr.slice(6, 8))
+  );
+  date.setDate(date.getDate() + 1);
+  return formatDate(date);
 }
 
 async function getLastSyncDate(jobName: string): Promise<string | null> {
@@ -266,61 +276,88 @@ export async function syncDailyCandles(targetDate?: string) {
   await upsertSyncLog('sync_daily_candles', 'running');
 
   try {
-    const date = targetDate || todayStr();
-    const stocks = await prisma.stockBasic.findMany({ select: { tsCode: true } });
-    console.log(`[sync] syncing daily candles: ${stocks.length} stocks in DB, date: ${date}`);
+    // Get the latest date in database
+    const latestCandle = await prisma.dailyCandle.findFirst({
+      orderBy: { tradeDate: 'desc' },
+      select: { tradeDate: true },
+    });
+
+    const latestDbDate = latestCandle?.tradeDate || '19700101';
+    const today = todayStr();
+
+    // Generate all dates from latest to today
+    const dates: string[] = [];
+    let current = latestDbDate;
+
+    while (current < today) {
+      current = nextDate(current);
+      if (current <= today) {
+        dates.push(current);
+      }
+    }
+
+    if (dates.length === 0) {
+      console.log(`[sync] daily_candles: already up to date (latest: ${latestDbDate})`);
+      await upsertSyncLog('sync_daily_candles', 'success', 0, 0, 0);
+      return;
+    }
+
+    console.log(`[sync] syncing daily candles from ${dates[0]} to ${dates[dates.length - 1]}, total ${dates.length} days`);
 
     let totalInserted = 0;
 
-    // Always try batch call first
-    try {
-      const items = await withRetry(() =>
-        tushareGet<DailyItem>('daily', {
-          trade_date: date,
-        }, 'ts_code,trade_date,open,high,low,close,vol,amount')
-      );
+    // Sync each date
+    for (const date of dates) {
+      try {
+        const items = await withRetry(() =>
+          tushareGet<DailyItem>('daily', {
+            trade_date: date,
+          }, 'ts_code,trade_date,open,high,low,close,vol,amount')
+        );
 
-      const records = rowsToObjects(
-        ['ts_code','trade_date','open','high','low','close','vol','amount'],
-        items as unknown as string[][]
-      ) as { ts_code: string; trade_date: string; open: string; high: string; low: string; close: string; vol: string; amount: string }[];
+        const records = rowsToObjects(
+          ['ts_code','trade_date','open','high','low','close','vol','amount'],
+          items as unknown as string[][]
+        ) as { ts_code: string; trade_date: string; open: string; high: string; low: string; close: string; vol: string; amount: string }[];
 
-      console.log(`[sync] batch daily returned ${records.length} records for ${date}`);
-      for (const r of records) {
-        await prisma.dailyCandle.upsert({
-          where: {
-            tsCode_tradeDate: {
-              tsCode: r.ts_code,
-              tradeDate: parseTradeDate(r.trade_date),
-            },
-          },
-          create: {
-            tsCode: r.ts_code,
-            tradeDate: parseTradeDate(r.trade_date),
-            open: Number(r.open),
-            high: Number(r.high),
-            low: Number(r.low),
-            close: Number(r.close),
-            vol: Number(r.vol),
-            amount: r.amount ? Number(r.amount) : null,
-          },
-          update: {
-            open: Number(r.open),
-            high: Number(r.high),
-            low: Number(r.low),
-            close: Number(r.close),
-            vol: Number(r.vol),
-            amount: r.amount ? Number(r.amount) : null,
-          },
-        });
-        totalInserted++;
+        if (records.length > 0) {
+          for (const r of records) {
+            await prisma.dailyCandle.upsert({
+              where: {
+                tsCode_tradeDate: {
+                  tsCode: r.ts_code,
+                  tradeDate: parseTradeDate(r.trade_date),
+                },
+              },
+              create: {
+                tsCode: r.ts_code,
+                tradeDate: parseTradeDate(r.trade_date),
+                open: Number(r.open),
+                high: Number(r.high),
+                low: Number(r.low),
+                close: Number(r.close),
+                vol: Number(r.vol),
+                amount: r.amount ? Number(r.amount) : null,
+              },
+              update: {
+                open: Number(r.open),
+                high: Number(r.high),
+                low: Number(r.low),
+                close: Number(r.close),
+                vol: Number(r.vol),
+                amount: r.amount ? Number(r.amount) : null,
+              },
+            });
+            totalInserted++;
+          }
+          console.log(`[sync] synced ${date}: ${records.length} records`);
+        }
+      } catch (err) {
+        console.warn(`[sync] failed for ${date}:`, err instanceof Error ? err.message : err);
       }
-      console.log(`[sync] batch insert done: ${totalInserted} records`);
-    } catch (err) {
-      console.warn('[sync] batch daily call failed:', err instanceof Error ? err.message : err);
     }
 
-    await upsertSyncLog('sync_daily_candles', 'success', stocks.length, totalInserted, 0);
+    await upsertSyncLog('sync_daily_candles', 'success', dates.length, totalInserted, 0);
     console.log(`[sync] daily_candles done: ${totalInserted} records`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

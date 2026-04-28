@@ -23,11 +23,13 @@
 ### 3. 策略运行（Strategy Run）
 
 **运行时参数**：
+
 - 股票列表（多选，支持从自选股或搜索选择）
 - 日期区间（开始日期 ~ 结束日期）
 - 数据配置（初始仅 K 线 OHLCV）
 
 **执行流程**：
+
 1. 前端发起 `POST /api/strategies/{id}/run`，传入运行参数
 2. 后端创建 `StrategyRun` 记录（status=pending），立即返回 `taskId`
 3. 前端连接 `GET /api/strategy-runs/{taskId}/stream`（SSE）
@@ -40,6 +42,7 @@
 6. 支持 `POST /api/strategy-runs/{taskId}/cancel` 取消
 
 **实时推送事件（SSE）**：
+
 - `progress`: `{ done: number, total: number, currentStock: string }`
 - `result`: `{ stockCode, result, reason, rawResponse }`
 - `done`: `{ status, summary }`
@@ -131,7 +134,7 @@ model StrategyRunResult {
 ### 策略
 
 | Method | Endpoint | 说明 |
-|--------|----------|------|
+| --- | --- | --- |
 | GET | `/api/strategies` | 列表 |
 | POST | `/api/strategies` | 创建 |
 | GET | `/api/strategies/[id]` | 详情 |
@@ -141,7 +144,7 @@ model StrategyRunResult {
 ### 提示词
 
 | Method | Endpoint | 说明 |
-|--------|----------|------|
+| --- | --- | --- |
 | GET | `/api/prompts` | 列表 |
 | POST | `/api/prompts` | 创建 |
 | GET | `/api/prompts/[id]` | 详情 |
@@ -151,7 +154,7 @@ model StrategyRunResult {
 ### 策略运行
 
 | Method | Endpoint | 说明 |
-|--------|----------|------|
+| --- | --- | --- |
 | GET | `/api/strategy-runs` | 运行历史 |
 | GET | `/api/strategy-runs/[id]` | 运行详情（含结果） |
 | POST | `/api/strategies/[id]/run` | 启动运行 → `{ taskId }` |
@@ -164,7 +167,7 @@ model StrategyRunResult {
 
 ### 请求格式（OpenAI 兼容）
 
-```
+```http
 POST {BASE_URL}/chat/completions
 Headers: Authorization: Bearer {API_KEY}
 {
@@ -179,14 +182,14 @@ Headers: Authorization: Bearer {API_KEY}
 ### 运行时变量替换
 
 | 变量 | 示例 |
-|------|------|
+| --- | --- |
 | `{{stockCode}}` | 600519 |
 | `{{dateRange}}` | 2026-01-01 ~ 2026-03-31 |
 | `{{klineData}}` | 日期,开,高,低,收,成交量\n20260101,100,105,98,103,5000000... |
 
 ### K 线数据格式
 
-```
+```text
 日期,开,高,低,收,成交量
 20260101,100.0,105.0,98.0,103.0,5000000
 20260102,103.0,108.0,102.0,107.0,6200000
@@ -198,7 +201,7 @@ Headers: Authorization: Bearer {API_KEY}
 ## 前端页面
 
 | 路径 | 说明 |
-|------|------|
+| --- | --- |
 | `/strategies` | 策略列表 |
 | `/strategies/new` | 创建策略 |
 | `/strategies/[id]` | 编辑策略 |
@@ -213,7 +216,7 @@ Headers: Authorization: Bearer {API_KEY}
 
 ## 环境变量
 
-```
+```bash
 OPENAI_BASE_URL=https://your-api-base.com/v1
 OPENAI_API_KEY=sk-xxx
 OPENAI_MODEL=gpt-4

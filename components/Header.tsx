@@ -7,6 +7,7 @@ import StockSearch from "./StockSearch";
 import AuthButtons from "./AuthButtons";
 import ThemeToggle from "./ThemeToggle";
 import { useUser } from "./UserProvider";
+import SyncConfirmModal from "./SyncConfirmModal";
 
 const navLinks = [
   { href: "/stock/600519", label: "行情", icon: "chart" },
@@ -47,6 +48,8 @@ export default function Header() {
   const { user, logout } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [cutoffDate, setCutoffDate] = useState<string | null>(null);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -65,6 +68,17 @@ export default function Header() {
       return pathname.startsWith("/stock");
     }
     return pathname.startsWith(href);
+  };
+
+  const handleSyncClick = async () => {
+    try {
+      const res = await fetch("/api/stocks/sync");
+      const data = await res.json();
+      setCutoffDate(data.cutoffDate);
+      setSyncModalOpen(true);
+    } catch (e) {
+      console.error("Failed to fetch cutoff date:", e);
+    }
   };
 
   return (
@@ -171,9 +185,29 @@ export default function Header() {
       )}
 
       <div className="flex items-center gap-1 sm:gap-2">
+        <button
+          onClick={handleSyncClick}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--surface-hover)] transition-all border border-[var(--border)] focus:outline-none"
+          title="更新数据"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 2v6h-6" />
+            <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+            <path d="M3 22v-6h6" />
+            <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+          </svg>
+        </button>
         <ThemeToggle />
         <AuthButtons />
       </div>
+
+      {syncModalOpen && (
+        <SyncConfirmModal
+          cutoffDate={cutoffDate}
+          onConfirm={() => setSyncModalOpen(false)}
+          onClose={() => setSyncModalOpen(false)}
+        />
+      )}
     </header>
   );
 }
