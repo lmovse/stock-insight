@@ -39,6 +39,13 @@ export default function AuthButtons() {
         {dropdownOpen && (
           <div className="absolute right-0 mt-2 w-36 rounded-lg border border-[var(--border)] shadow-lg z-50 overflow-hidden"
             style={{ background: 'var(--surface-solid)' }}>
+            <Link
+              href="/favorites"
+              onClick={() => setDropdownOpen(false)}
+              className="block px-4 py-2.5 text-sm text-left text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              我的收藏
+            </Link>
             <button
               onClick={async () => {
                 setDropdownOpen(false);

@@ -6,6 +6,7 @@ import HQChart from "@/components/HQChart";
 import IndicatorPanel from "@/components/IndicatorPanel";
 import { calcMA } from "@/lib/indicators";
 import type { KLineData, IndicatorConfig, StockInfo } from "@/lib/types";
+import { useUser } from "@/components/UserProvider";
 
 const defaultIndicators: IndicatorConfig = {
   ma: true,
@@ -27,6 +28,10 @@ export default function StockPage() {
   const [indicators, setIndicators] = useState<IndicatorConfig>(defaultIndicators);
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const { user } = useUser();
+  const [isWatched, setIsWatched] = useState(false);
+  const [watchId, setWatchId] = useState<string | null>(null);
+  const [watchLoading, setWatchLoading] = useState(false);
 
   useEffect(() => {
     if (!code) return;
@@ -47,6 +52,53 @@ export default function StockPage() {
       setLoading(false);
     });
   }, [code, period]);
+
+  // Check if stock is in watchlist
+  useEffect(() => {
+    if (!user || !code) return;
+    fetch("/api/watchlist")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const item = data.find((w: { stockCode: string }) => w.stockCode === code);
+          if (item) {
+            setIsWatched(true);
+            setWatchId(item.id);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [user, code]);
+
+  const toggleWatch = async () => {
+    if (!user) {
+      alert("请先登录");
+      return;
+    }
+    setWatchLoading(true);
+    try {
+      if (isWatched && watchId) {
+        await fetch(`/api/watchlist/${watchId}`, { method: "DELETE" });
+        setIsWatched(false);
+        setWatchId(null);
+      } else {
+        const res = await fetch("/api/watchlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stockCode: code }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setIsWatched(true);
+          setWatchId(data.id);
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setWatchLoading(false);
+    }
+  };
 
   const lastData = klineData.length > 0 ? klineData[klineData.length - 1] : null;
   const prevData = klineData.length > 1 ? klineData[klineData.length - 2] : null;
@@ -93,11 +145,27 @@ export default function StockPage() {
       <div className="info-strip shrink-0 px-3 sm:px-5 py-3 relative sticky top-0 z-10 bg-[var(--background)]">
         <div className="flex flex-wrap items-center gap-3 sm:gap-5">
           {/* Stock name */}
-          <div>
-            <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
-              {stockInfo?.name || code}
+          <div className="flex items-center gap-2">
+            <div>
+              <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
+                {stockInfo?.name || code}
+              </div>
+              <div className="text-xs text-[var(--text-muted)] font-mono hidden sm:block">{code}</div>
             </div>
-            <div className="text-xs text-[var(--text-muted)] font-mono hidden sm:block">{code}</div>
+            <button
+              onClick={toggleWatch}
+              disabled={watchLoading}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isWatched
+                  ? "text-[var(--accent)] hover:bg-[var(--surface-hover)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--surface-hover)]"
+              }`}
+              title={isWatched ? "取消收藏" : "添加收藏"}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={isWatched ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </button>
           </div>
 
           <div className="w-px h-6 sm:h-8 bg-[var(--border)] hidden sm:block" />
