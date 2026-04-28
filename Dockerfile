@@ -51,6 +51,11 @@ ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Set environment variables for Prisma to generate
+ENV DATABASE_URL="mysql://root:root@localhost:3306/dummy"
+ENV SHADOW_DATABASE_URL="mysql://root:root@localhost:3306/dummy_shadow"
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
+
 # Build Next.js application
 # If you want to speed up Docker rebuilds, you can cache the build artifacts
 # by adding: --mount=type=cache,target=/app/.next/cache
@@ -58,11 +63,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # .next/cache/fetch-cache from being included in the final image, meaning
 # cached fetch responses from the build won't be available at runtime.
 RUN if [ -f package-lock.json ]; then \
-    npm run build; \
+   npx prisma generate && npm run build; \
   elif [ -f yarn.lock ]; then \
-    corepack enable yarn && yarn build; \
+    corepack enable yarn && npx prisma generate && yarn build; \
   elif [ -f pnpm-lock.yaml ]; then \
-    corepack enable pnpm && pnpm build; \
+    corepack enable pnpm && npx prisma generate && pnpm build; \
   else \
     echo "No lockfile found." && exit 1; \
   fi

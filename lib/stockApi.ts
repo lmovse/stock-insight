@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { StockInfo, KLineData } from "./types";
-import { Prisma } from "@prisma/client";
+import type { StockBasic } from "@prisma/client";
 
 function codeToTsCode(code: string): string {
   const c = code.startsWith("0") || code.startsWith("3") ? "SZ" : code.startsWith("4") || code.startsWith("8") ? "BJ" : "SH";
@@ -33,7 +33,7 @@ export async function searchStocks(query: string): Promise<StockInfo[]> {
     take: 20,
     orderBy: { name: "asc" },
   });
-  return stocks.map((s: Prisma.StockBasicGetPayload<object>) => {
+  return stocks.map((s: StockBasic) => {
     const { code, market } = tsCodeToCode(s.tsCode);
     return { code, name: s.name, market };
   });

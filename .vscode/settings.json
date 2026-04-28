@@ -26,6 +26,7 @@
         "procps",
         "statsig",
         "Tushare",
-        "watchlist"
+        "watchlist",
+        "watchlists"
     ]
 }
