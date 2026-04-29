@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Stock Insight
+
+A modern stock analysis and trading strategy platform built with Next.js 16.
+
+## Features
+
+- **Stock Search** - Search stocks by code, name, or pinyin with real-time kline charts
+- **Watchlist** - Organize favorite stocks into custom groups
+- **Portfolio Tracking** - Track positions, average cost, and trade history
+- **Trading Strategies** - Create and backtest trading strategies with customizable prompts
+- **Technical Indicators** - MA, EMA, MACD, RSI, Bollinger Bands, and more
+- **Drawing Tools** - Trend lines, Fibonacci, horizontal lines, and annotations
+- **AI-Powered Analysis** - OpenAI-compatible API integration for strategy execution
+- **Theme Support** - Dark and light modes with industrial-style UI
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Database**: SQLite with Prisma ORM
+- **Styling**: Tailwind CSS 4
+- **Charts**: HQChart
+- **Auth**: JWT with jose
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Set up database
+npx prisma db push
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Docker
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Build image
+docker build -t stock-insight .
 
-## Learn More
+# Run container
+docker run -p 3000:3000 --env-file .env stock-insight
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cp .env.example .env
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Required variables:
+- `DATABASE_URL` - SQLite database path
+- `JWT_SECRET` - Secret key for JWT tokens
+- `TUSHARE_TOKEN` - Tushare API token for stock data
+- `OPENAI_API_KEY` - OpenAI API key for strategy analysis
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   ├── stock/[code]/       # Stock detail page
+│   ├── strategies/        # Strategy management
+│   └── ...
+├── components/             # React components
+├── prisma/                 # Database schema
+├── jobs/                   # Sync jobs
+└── Dockerfile
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+MIT
