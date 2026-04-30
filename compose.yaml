@@ -1,0 +1,7 @@
+services:
+  stock-insight:
+    image: ghcr.io/lmovse/stock-insight:0.0.1
+    restart: always
+    env_file: .env
+    volumes:
+      - ./data:/app/data
