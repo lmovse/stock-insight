@@ -26,7 +26,7 @@ export default function StockPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [indicators, setIndicators] = useState<IndicatorConfig>(defaultIndicators);
-  const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [period, setPeriod] = useState<"15min" | "60min" | "daily" | "weekly" | "monthly">("daily");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { user } = useUser();
   const [isWatched, setIsWatched] = useState(false);
@@ -207,6 +207,22 @@ export default function StockPage() {
         >
           {/* Period selector */}
           <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border-subtle)] shrink-0">
+            {/* 短周期 */}
+            {(["15min", "60min"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1 text-xs font-mono uppercase tracking-wide border transition-colors rounded-lg ${
+                  period === p
+                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
+                }`}
+              >
+                {p === "15min" ? "15分" : "60分"}
+              </button>
+            ))}
+            <span className="w-px h-4 bg-[var(--border)]" />
+            {/* 中长周期 */}
             {(["daily", "weekly", "monthly"] as const).map((p) => (
               <button
                 key={p}
