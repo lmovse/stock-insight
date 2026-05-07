@@ -118,7 +118,9 @@ export async function getMinuteKLineData(
   period: "15min" | "60min",
   count: number = 300
 ): Promise<KLineData[]> {
-  const tsCode = codeToTsCode(code);
+  // Baostock format: sh.600075 / sz.000001 (lowercase, market prefix)
+  const prefix = code.startsWith("0") || code.startsWith("3") ? "sz" : "sh";
+  const tsCode = `${prefix}.${code}`;
 
   const candles = await prisma.minuteCandle.findMany({
     where: { tsCode },
