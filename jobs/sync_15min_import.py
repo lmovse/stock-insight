@@ -7,8 +7,7 @@
 import csv
 import sys
 import sqlite3
-import random
-import time as _time
+import uuid
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "prisma" / "dev.db"
@@ -16,10 +15,9 @@ CSV_DIR = Path(__file__).parent.parent / "data" / "15min"
 
 
 def cuid() -> str:
-    t = int(_time.time()).to_string(36)
-    r = random.random().__repr__()[2:10]
-    c = random.random().__repr__()[10:14]
-    return f"c{t}{r}{c}"
+    # 使用 uuid4 截断生成唯一 ID，格式类似 Prisma cuid
+    u = uuid.uuid4().hex
+    return f"c{u[:24]}"
 
 
 def import_csv(csv_path: Path, conn: sqlite3.Connection) -> int:
