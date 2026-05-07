@@ -2,6 +2,7 @@ import { calcMA, calcMACD, calcKDJ, calcBOLL, calcRSI } from "./indicators";
 
 export interface KLineData {
   date: number;      // yyyymmdd format
+  time?: string;     // YYYYMMDDHHMM format, for minute-level K-line
   open: number;
   high: number;
   low: number;
@@ -749,11 +750,22 @@ export class ChartRenderer {
     // Show fewer labels on mobile to avoid overlapping
     const labelCount = this.cssWidth < MOBILE_BREAKPOINT ? 4 : 6;
     const interval = Math.max(1, Math.floor(visibleData.length / labelCount));
+
+    // Determine if this is minute-level data (has time field)
+    const isMinuteData = visibleData[0]?.time !== undefined;
+
     visibleData.forEach((d, i) => {
       if (i % interval !== 0) return;
       const x = this.paddingLeft + i * candleTotal + this.candleWidth / 2;
-      const dateStr = String(d.date);
-      const label = `${dateStr.slice(0, 4)}/${dateStr.slice(4, 6)}/${dateStr.slice(6, 8)}`;
+      let label: string;
+      if (isMinuteData && d.time !== undefined) {
+        // Minute data: show HH:MM format
+        label = `${d.time.slice(8, 10)}:${d.time.slice(10, 12)}`;
+      } else {
+        // Daily data: show MM/DD format
+        const dateStr = String(d.date);
+        label = `${dateStr.slice(4, 6)}/${dateStr.slice(6, 8)}`;
+      }
       this.ctx.fillText(label, x, y);
     });
 
