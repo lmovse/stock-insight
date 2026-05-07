@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { runFullSync } from "@/lib/tushare/sync";
+import { runFullSync, syncMinuteCandles } from "@/lib/tushare/sync";
 
 const prisma = new PrismaClient();
 
@@ -23,14 +23,19 @@ export async function GET(_req: NextRequest) {
 }
 
 // POST /api/stocks/sync - Trigger full sync
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    // Run sync in background - don't await completion
-    runFullSync().catch((err) => {
-      console.error("[api/stocks/sync] Sync failed:", err);
-    });
+    const body = await req.json().catch(() => ({}));
+    const type = body.type || "all"; // "daily" | "minute" | "all"
 
-    return NextResponse.json({ message: "Sync started" });
+    if (type === "all" || type === "daily") {
+      runFullSync().catch((err) => console.error("[sync] daily failed:", err));
+    }
+    if (type === "all" || type === "minute") {
+      syncMinuteCandles().catch((err) => console.error("[sync] minute failed:", err));
+    }
+
+    return NextResponse.json({ message: "Sync started", type });
   } catch (e) {
     console.error("[api/stocks/sync] Failed to start sync:", e);
     return NextResponse.json({ error: "Failed to start sync" }, { status: 500 });
