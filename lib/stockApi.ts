@@ -113,6 +113,31 @@ export async function getKLineData(
   return result.slice(-count);
 }
 
+export async function getMinuteKLineData(
+  code: string,
+  period: "15min" | "60min",
+  count: number = 300
+): Promise<KLineData[]> {
+  const tsCode = codeToTsCode(code);
+
+  const candles = await prisma.minuteCandle.findMany({
+    where: { tsCode },
+    orderBy: { tradeTime: "desc" },
+    take: count,
+  });
+
+  return candles.reverse().map((c) => ({
+    date: parseInt(c.tradeDate),
+    time: c.tradeTime,
+    open: c.open,
+    high: c.high,
+    low: c.low,
+    close: c.close,
+    volume: c.volume,
+    amount: c.amount ?? undefined,
+  }));
+}
+
 export async function getStockInfo(code: string): Promise<StockInfo> {
   const tsCode = codeToTsCode(code);
   const stock = await prisma.stockBasic.findUnique({ where: { tsCode } });

@@ -12,6 +12,7 @@ export interface KLineData {
   close: number;
   volume: number;
   amount?: number;
+  time?: string;      // YYYYMMDDHHMM format, for minute-level K-line
 }
 
 export interface IndicatorConfig {
