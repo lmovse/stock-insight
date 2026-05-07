@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getKLineData } from "@/lib/stockApi";
+import { getKLineData, getMinuteKLineData } from "@/lib/stockApi";
 
 export async function GET(
   req: NextRequest,
@@ -9,6 +9,11 @@ export async function GET(
   const period = req.nextUrl.searchParams.get("period") || "daily";
   const count = parseInt(req.nextUrl.searchParams.get("count") || "300");
   try {
+    if (period === "15min" || period === "60min") {
+      const data = await getMinuteKLineData(code, period, count);
+      return NextResponse.json(data);
+    }
+
     const data = await getKLineData(code, period, count);
     return NextResponse.json(data);
   } catch (e) {
