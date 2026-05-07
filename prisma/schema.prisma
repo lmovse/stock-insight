@@ -142,6 +142,25 @@ model DailyCandle {
   @@index([tradeDate])
 }
 
+model MinuteCandle {
+  id         String  @id @default(cuid())
+  tsCode     String
+  tradeDate  String              // YYYYMMDD 格式
+  tradeTime  String              // YYYYMMDDHHMM 格式，唯一约束
+  open       Float
+  high       Float
+  low        Float
+  close      Float
+  volume     Float
+  amount     Float?
+  adjustFlag String  @default("3") // 1=后复权 2=前复权 3=不复权
+
+  @@unique([tsCode, tradeTime])
+  @@index([tsCode])
+  @@index([tradeDate])
+  @@index([tsCode, tradeDate])
+}
+
 model IndexBasic {
   tsCode   String @id
   name     String
