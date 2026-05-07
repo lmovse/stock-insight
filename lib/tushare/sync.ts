@@ -4,6 +4,7 @@ import axios from 'axios';
 import { tushareGet, rowsToObjects, TushareError, parseTradeDate, withRetry } from './client';
 import type { DailyItem, StockBasicItem, IndexBasicItem, IndexDailyItem } from './types';
 import { toPinyin } from '@/lib/pinyin';
+import * as path from "path";
 
 const prisma = new PrismaClient();
 
@@ -479,4 +480,48 @@ export async function runFullSync() {
   await syncIndexBasics();
   // index_daily requires pro permission, skip
   console.log('[sync] === full sync complete ===');
+}
+
+// ─── runPythonScript ─────────────────────────────────────────────────────────
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
+
+async function runPythonScript(scriptPath: string): Promise<void> {
+  const absolutePath = path.resolve(process.cwd(), scriptPath);
+  console.log(`[sync] Running Python script: ${absolutePath}`);
+  try {
+    const { stdout, stderr } = await execAsync(`python ${absolutePath}`, {
+      timeout: 10 * 60 * 1000, // 10 分钟超时
+    });
+    if (stdout) console.log(`[sync] ${scriptPath} stdout:`, stdout.trim());
+    if (stderr) console.warn(`[sync] ${scriptPath} stderr:`, stderr.trim());
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[sync] ${scriptPath} failed:`, msg);
+    throw err;
+  }
+}
+
+// ─── syncMinuteCandles ───────────────────────────────────────────────────────
+export async function syncMinuteCandles() {
+  await upsertSyncLog("sync_minute_candles", "running");
+
+  try {
+    console.log("[sync] === Phase 1: fetching 15min data from Baostock ===");
+    await runPythonScript("jobs/sync_15min.py");
+
+    console.log("[sync] === Phase 2: importing CSV to SQLite ===");
+    await runPythonScript("jobs/sync_15min_import.py");
+
+    const count = await prisma.minuteCandle.count();
+    await upsertSyncLog("sync_minute_candles", "success", count, count, 0);
+    console.log(`[sync] minute_candles done: ${count} records`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await upsertSyncLog("sync_minute_candles", "failed", 0, 0, 0, msg);
+    console.error("[sync] sync_minute_candles failed:", err);
+    throw err;
+  }
 }
