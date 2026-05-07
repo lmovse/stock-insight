@@ -39,7 +39,7 @@ export default function StockPage() {
 
     Promise.all([
       fetch(`/api/stocks/${code}`).then((r) => r.ok ? r.json() : null),
-      fetch(`/api/stocks/${code}/kline?period=${period}&count=300`).then((r) => {
+      fetch(`/api/stocks/${code}/kline?period=${period}&count=3000`).then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       }),
