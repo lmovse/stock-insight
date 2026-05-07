@@ -46,3 +46,17 @@ next-env.d.ts
 *.db
 *.csv
 .playwright-mcp/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+jobs/__pycache__/
+data/15min/
