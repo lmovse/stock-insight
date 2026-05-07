@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
+        "adjustflag",
         "Archivo",
+        "Baostock",
         "bashhistory",
         "Buildx",
         "commandhistory",
@@ -10,6 +12,7 @@
         "dport",
         "eamodio",
         "esbenp",
+        "executemany",
         "GITSTATUS",
         "HISTFILE",
         "ipsets",
@@ -28,6 +31,7 @@
         "statsig",
         "Tushare",
         "watchlist",
-        "watchlists"
+        "watchlists",
+        "YYYYMMDDHHMM"
     ]
 }
