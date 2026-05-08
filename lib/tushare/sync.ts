@@ -487,12 +487,13 @@ import { exec } from "child_process";
 import { promisify } from "util";
 
 const execAsync = promisify(exec);
+const VENV_PYTHON = path.resolve(process.cwd(), ".venv/bin/python");
 
 async function runPythonScript(scriptPath: string): Promise<void> {
   const absolutePath = path.resolve(process.cwd(), scriptPath);
   console.log(`[sync] Running Python script: ${absolutePath}`);
   try {
-    const { stdout, stderr } = await execAsync(`python ${absolutePath}`, {
+    const { stdout, stderr } = await execAsync(`${VENV_PYTHON} ${absolutePath}`, {
       timeout: 10 * 60 * 1000, // 10 分钟超时
     });
     if (stdout) console.log(`[sync] ${scriptPath} stdout:`, stdout.trim());
@@ -509,8 +510,8 @@ export async function syncMinuteCandles() {
   await upsertSyncLog("sync_minute_candles", "running");
 
   try {
-    console.log("[sync] === Phase 1: fetching 15min data from Baostock ===");
-    await runPythonScript("jobs/sync_15min.py");
+    console.log("[sync] === Phase 1: fetching 15min data (incremental, config-driven) ===");
+    await runPythonScript("jobs/sync_15min_fetch.py --incremental");
 
     console.log("[sync] === Phase 2: importing CSV to SQLite ===");
     await runPythonScript("jobs/sync_15min_import.py");
