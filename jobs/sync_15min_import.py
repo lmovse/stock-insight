@@ -14,6 +14,20 @@ DB_PATH = Path(__file__).parent.parent / "prisma" / "dev.db"
 CSV_DIR = Path(__file__).parent.parent / "data" / "15min"
 
 
+def get_configured_codes() -> list[str]:
+    """从 StockConfig 读取 enabled=true + purpose=FIFTEEN_MIN 的股票，转换回 Baostock 格式"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT stockCode FROM StockConfig
+        WHERE enabled = 1 AND purpose = 'FIFTEEN_MIN'
+    """)
+    codes = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    # 内部格式 "600000.SH" → Baostock 格式 "sh.600000"
+    return [f"{code.split('.')[1].lower()}.{code.split('.')[0].lower()}" for code in codes]
+
+
 def cuid() -> str:
     # 使用 uuid4 截断生成唯一 ID，格式类似 Prisma cuid
     u = uuid.uuid4().hex
@@ -68,7 +82,14 @@ def main():
     total_imported = 0
     total_files = 0
 
-    csv_files = list(CSV_DIR.glob("*.csv"))
+    configured_codes = get_configured_codes()
+    if not configured_codes:
+        print("[sync_15min_import] No stocks configured for FIFTEEN_MIN. Exiting.", file=sys.stderr)
+        return
+
+    all_csv = CSV_DIR.glob("*.csv")
+    # 只处理配置中存在的 CSV 文件
+    csv_files = [f for f in all_csv if f.stem in configured_codes]
     print(f"[sync_15min_import] {len(csv_files)} CSV files found", file=sys.stderr)
 
     for csv_path in csv_files:
