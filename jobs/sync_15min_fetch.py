@@ -17,8 +17,10 @@ from pathlib import Path
 # 路径配置
 WORK_DIR = Path(__file__).parent.parent
 DB_PATH = WORK_DIR / "prisma" / "dev.db"
-OUT_DIR = WORK_DIR / "data" / "15min"
+OUT_DIR = WORK_DIR / "data" / "15min"           # 全量历史 CSV
+INC_DIR = WORK_DIR / "data" / "15min_incremental"  # 每日增量 CSV
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+INC_DIR.mkdir(parents=True, exist_ok=True)
 
 START_DATE = "2023-05-07"  # 近三年（用于全量模式）
 RECONNECT_EVERY = 500
@@ -143,8 +145,6 @@ def main():
 
     try:
         for i, baostock_code in enumerate(baostock_codes):
-            csv_path = OUT_DIR / f"{baostock_code}.csv"
-
             if args.incremental:
                 # 增量模式：从 DB 最新日期开始抓取
                 latest = get_latest_date(baostock_code)
@@ -165,8 +165,9 @@ def main():
                 df = fetch_stock(baostock_code, start_date)
 
                 if df is not None and len(df) > 0:
-                    # 增量模式：覆盖写入 CSV
-                    df.to_csv(csv_path, index=False)
+                    # 增量模式：覆盖写入增量目录
+                    inc_csv = INC_DIR / f"{baostock_code}.csv"
+                    df.to_csv(inc_csv, index=False)
                     fetched += 1
                     print(f"[{i+1}/{total}] {baostock_code} incremental OK: {len(df)} rows from {start_date}", file=sys.stderr)
                 else:
@@ -175,6 +176,7 @@ def main():
 
             elif args.full:
                 # 全量模式：跳过已有 CSV
+                csv_path = OUT_DIR / f"{baostock_code}.csv"
                 if csv_path.exists():
                     skipped += 1
                     continue

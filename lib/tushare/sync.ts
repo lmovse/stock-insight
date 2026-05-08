@@ -513,8 +513,8 @@ export async function syncMinuteCandles() {
     console.log("[sync] === Phase 1: fetching 15min data (incremental, config-driven) ===");
     await runPythonScript("jobs/sync_15min_fetch.py --incremental");
 
-    console.log("[sync] === Phase 2: importing CSV to SQLite ===");
-    await runPythonScript("jobs/sync_15min_import.py");
+    console.log("[sync] === Phase 2: importing incremental CSV to SQLite ===");
+    await runPythonScript("jobs/sync_15min_import.py --incremental");
 
     const count = await prisma.minuteCandle.count();
     await upsertSyncLog("sync_minute_candles", "success", count, count, 0);

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
 15 分钟 K 线 CSV 批量导入 SQLite
-入口: python jobs/sync_15min_import.py
+入口:
+  全量历史导入: python jobs/sync_15min_import.py --full
+  每日增量导入: python jobs/sync_15min_import.py --incremental
 依赖: pip install pandas
 """
+import argparse
 import csv
 import sys
 import sqlite3
@@ -11,7 +14,8 @@ import uuid
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "prisma" / "dev.db"
-CSV_DIR = Path(__file__).parent.parent / "data" / "15min"
+FULL_CSV_DIR = Path(__file__).parent.parent / "data" / "15min"
+INC_CSV_DIR = Path(__file__).parent.parent / "data" / "15min_incremental"
 
 
 def get_configured_codes() -> list[str]:
@@ -74,9 +78,21 @@ def import_csv(csv_path: Path, conn: sqlite3.Connection) -> int:
 
 
 def main():
-    if not CSV_DIR.exists():
-        print(f"[sync_15min_import] CSV dir not found: {CSV_DIR}", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="15min K 线导入")
+    parser.add_argument("--full", action="store_true", help="从全量历史 CSV 导入")
+    parser.add_argument("--incremental", action="store_true", help="从每日增量 CSV 导入")
+    args = parser.parse_args()
+
+    if args.incremental:
+        csv_dir = INC_CSV_DIR
+        if not csv_dir.exists():
+            print(f"[sync_15min_import] Incremental CSV dir not found: {csv_dir}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        csv_dir = FULL_CSV_DIR
+        if not csv_dir.exists():
+            print(f"[sync_15min_import] Full CSV dir not found: {csv_dir}", file=sys.stderr)
+            sys.exit(1)
 
     conn = sqlite3.connect(DB_PATH)
     total_imported = 0
@@ -88,10 +104,10 @@ def main():
         conn.close()
         return
 
-    all_csv = CSV_DIR.glob("*.csv")
+    all_csv = csv_dir.glob("*.csv")
     # 只处理配置中存在的 CSV 文件
     csv_files = [f for f in all_csv if f.stem in configured_codes]
-    print(f"[sync_15min_import] {len(csv_files)} CSV files found", file=sys.stderr)
+    print(f"[sync_15min_import] {len(csv_files)} CSV files found in {csv_dir}", file=sys.stderr)
 
     for csv_path in csv_files:
         if csv_path.stat().st_size == 0:
