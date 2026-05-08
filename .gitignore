@@ -60,3 +60,4 @@ build/
 .mypy_cache/
 jobs/__pycache__/
 data/15min/
+.worktrees/
