@@ -7,7 +7,6 @@
 import baostock as bs
 import pandas as pd
 import time
-import os
 import sys
 import sqlite3
 from pathlib import Path
@@ -25,8 +24,11 @@ SLEEP_INTERVAL = 0.1
 
 def to_baostock_code(stock_code: str) -> str:
     """内部格式转 Baostock 格式: 600000.SH -> sh.600000"""
-    symbol, market = stock_code.split(".")
-    return f"{market.lower()}.{symbol}"
+    try:
+        symbol, market = stock_code.split(".")
+        return f"{market.lower()}.{symbol}"
+    except ValueError:
+        raise ValueError(f"Invalid stock code format: {stock_code}")
 
 
 def login():
