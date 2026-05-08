@@ -182,6 +182,17 @@ model IndexDaily {
   @@index([tradeDate])
 }
 
+model StockConfig {
+  id        String   @id @default(cuid())
+  stockCode String   // 格式: "600000.SH" / "000001.SZ"
+  purpose   String   // "FIFTEEN_MIN" | "DAILY" | "REALTIME"
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([stockCode, purpose])
+  @@index([enabled])
+}
+
 model SyncLog {
   jobName    String @id
   status     String
