@@ -85,6 +85,7 @@ def main():
     configured_codes = get_configured_codes()
     if not configured_codes:
         print("[sync_15min_import] No stocks configured for FIFTEEN_MIN. Exiting.", file=sys.stderr)
+        conn.close()
         return
 
     all_csv = CSV_DIR.glob("*.csv")
