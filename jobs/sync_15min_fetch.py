@@ -165,9 +165,8 @@ def main():
                 df = fetch_stock(baostock_code, start_date)
 
                 if df is not None and len(df) > 0:
-                    # 增量模式：追加写入 CSV
-                    mode = "a" if csv_path.exists() else "w"
-                    df.to_csv(csv_path, index=False, mode=mode, header=(mode == "w"))
+                    # 增量模式：覆盖写入 CSV
+                    df.to_csv(csv_path, index=False)
                     fetched += 1
                     print(f"[{i+1}/{total}] {baostock_code} incremental OK: {len(df)} rows from {start_date}", file=sys.stderr)
                 else:
