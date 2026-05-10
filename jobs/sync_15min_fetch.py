@@ -1,29 +1,23 @@
 #!/usr/bin/env python3
 """
 15 分钟 K 线抓取脚本
-入口:
-  全量抓取（首次）: python jobs/sync_15min_fetch.py --full
-  增量同步（每日）: python jobs/sync_15min_fetch.py --incremental
+直接从 DB 查询每只股票的最新日期，决定增量还是全量抓取，然后 upsert 到 DB。
+入口: python jobs/sync_15min_fetch.py
 依赖: pip install baostock pandas
 """
-import argparse
 import baostock as bs
 import pandas as pd
 import time
 import sys
 import sqlite3
+import uuid
 from pathlib import Path
+from datetime import datetime, timedelta, date
 
-# 路径配置
 WORK_DIR = Path(__file__).parent.parent
 DB_PATH = WORK_DIR / "prisma" / "dev.db"
-OUT_DIR = WORK_DIR / "data" / "15min"           # 全量历史 CSV
-INC_DIR = WORK_DIR / "data" / "15min_incremental"  # 每日增量 CSV
-OUT_DIR.mkdir(parents=True, exist_ok=True)
-INC_DIR.mkdir(parents=True, exist_ok=True)
-
-START_DATE = "2023-05-07"  # 近三年（用于全量模式）
-RECONNECT_EVERY = 500
+START_DATE = "2023-05-07"  # 近三年
+RECONNECT_EVERY = 100
 SLEEP_INTERVAL = 0.1
 
 
@@ -71,8 +65,61 @@ def get_latest_date(ts_code: str) -> str | None:
     return row[0] if row and row[0] else None
 
 
-def fetch_stock(baostock_code: str, start_date: str) -> pd.DataFrame | None:
-    """抓取单只股票的 15min K 线（从 start_date 开始）"""
+def upsert_minute_candles(df: pd.DataFrame, conn: sqlite3.Connection) -> int:
+    """Upsert DataFrame 到 MinuteCandle 表，返回写入行数"""
+    cursor = conn.cursor()
+    rows = []
+    for _, r in df.iterrows():
+        rows.append((
+            str(uuid.uuid4().hex[:24]),
+            r["tsCode"],
+            r["tradeDate"],
+            r["tradeTime"],
+            float(r["open"]),
+            float(r["high"]),
+            float(r["low"]),
+            float(r["close"]),
+            float(r["volume"]),
+            float(r["amount"]) if pd.notna(r["amount"]) else None,
+            "1",  # adjustFlag=后复权
+        ))
+
+    cursor.executemany("""
+        INSERT INTO MinuteCandle
+          (id, tsCode, tradeDate, tradeTime, open, high, low, close, volume, amount, adjustFlag)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (tsCode, tradeTime) DO UPDATE SET
+          open=excluded.open,
+          high=excluded.high,
+          low=excluded.low,
+          close=excluded.close,
+          volume=excluded.volume,
+          amount=excluded.amount
+    """, rows)
+    conn.commit()
+    return len(rows)
+
+
+def fetch_and_upsert(baostock_code: str) -> tuple[int, str]:
+    """
+    抓取并 upsert 单只股票的 15min K 线。
+    返回 (写入行数, start_date)。如果无新数据则返回 (0, start_date)。
+    """
+    # 查 DB 最新日期
+    latest = get_latest_date(baostock_code)
+
+    if latest:
+        # 有数据，增量：从最新日期的下一天开始
+        latest_dt = datetime.strptime(latest, "%Y%m%d")
+        start_dt = latest_dt + timedelta(days=1)
+        if start_dt.date() >= date.today():
+            return (0, start_dt.strftime("%Y-%m-%d"))  # 今天还没过，跳过
+        start_date = start_dt.strftime("%Y-%m-%d")
+    else:
+        # 无数据，全量
+        start_date = START_DATE
+
+    # 抓取
     try:
         rs = bs.query_history_k_data_plus(
             baostock_code,
@@ -80,63 +127,54 @@ def fetch_stock(baostock_code: str, start_date: str) -> pd.DataFrame | None:
             start_date=start_date,
             end_date="",
             frequency="15",
-            adjustflag="1",  # 后复权
+            adjustflag="1",
         )
         if rs.error_code != "0":
             print(f"  query failed: {rs.error_msg}", file=sys.stderr)
-            return None
-
-        data_list = []
-        while rs.next():
-            data_list.append(rs.get_row_data())
-
-        if not data_list:
-            return None
-
-        df = pd.DataFrame(data_list, columns=rs.fields)
-        df = df[df["volume"].astype(float) > 0]  # 过滤停牌
-
-        # time: YYYYMMDDHHMMSSsss → YYYYMMDDHHMM（前12位）
-        df["tradeTime"] = df["time"].str[:12]
-        df["tradeDate"] = df["date"].str.replace("-", "", regex=False)
-
-        for col in ["open", "high", "low", "close", "volume", "amount"]:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
-        df = df[["tradeDate", "tradeTime", "code", "open", "high", "low", "close", "volume", "amount"]]
-        df = df.rename(columns={"code": "tsCode"})
-        return df
+            return (0, start_date)
     except Exception as e:
         print(f"  exception: {e}", file=sys.stderr)
-        return None
+        return (0, start_date)
+
+    data_list = []
+    while rs.next():
+        data_list.append(rs.get_row_data())
+
+    if not data_list:
+        return (0, start_date)
+
+    df = pd.DataFrame(data_list, columns=rs.fields)
+    df = df[df["volume"].astype(float) > 0]
+
+    df["tradeTime"] = df["time"].str[:12]
+    df["tradeDate"] = df["date"].str.replace("-", "", regex=False)
+
+    for col in ["open", "high", "low", "close", "volume", "amount"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df = df[["tradeDate", "tradeTime", "code", "open", "high", "low", "close", "volume", "amount"]]
+    df = df.rename(columns={"code": "tsCode"})
+
+    # 直接 upsert 到 DB
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        inserted = upsert_minute_candles(df, conn)
+    finally:
+        conn.close()
+
+    return (inserted, start_date)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="15min K 线抓取")
-    parser.add_argument(
-        "--full",
-        action="store_true",
-        help="全量抓取（跳过已有 CSV）"
-    )
-    parser.add_argument(
-        "--incremental",
-        action="store_true",
-        help="增量同步（基于 DB 最新日期，只拉新数据）"
-    )
-    args = parser.parse_args()
-
-    # 读取配置的股票
     stock_codes = get_configured_codes()
     print(f"[sync_15min_fetch] Configured stocks: {len(stock_codes)}", file=sys.stderr)
 
     if not stock_codes:
-        print("[sync_15min_fetch] No stocks configured with enabled=1 AND purpose=FIFTEEN_MIN", file=sys.stderr)
+        print("[sync_15min_fetch] No stocks configured", file=sys.stderr)
         return
 
-    # 转换为 Baostock 格式
     baostock_codes = [to_baostock_code(code) for code in stock_codes]
 
-    # 开始抓取
     login()
     total = len(baostock_codes)
     fetched = 0
@@ -145,56 +183,15 @@ def main():
 
     try:
         for i, baostock_code in enumerate(baostock_codes):
-            if args.incremental:
-                # 增量模式：从 DB 最新日期开始抓取
-                latest = get_latest_date(baostock_code)
-                if latest:
-                    # DB 有数据，从最新日期的下一天开始
-                    latest_dt = f"{latest[:4]}-{latest[4:6]}-{latest[6:8]}"
-                    from datetime import datetime, timedelta
-                    start_dt = datetime.strptime(latest_dt, "%Y-%m-%d") + timedelta(days=1)
-                    start_date = start_dt.strftime("%Y-%m-%d")
-                    # 如果日期还没到（今天），跳过
-                    from datetime import date
-                    if start_dt.date() >= date.today():
-                        skipped += 1
-                        continue
-                else:
-                    # DB 无数据，抓近三年
-                    start_date = START_DATE
-                df = fetch_stock(baostock_code, start_date)
+            inserted, start_date = fetch_and_upsert(baostock_code)
 
-                if df is not None and len(df) > 0:
-                    # 增量模式：覆盖写入增量目录
-                    inc_csv = INC_DIR / f"{baostock_code}.csv"
-                    df.to_csv(inc_csv, index=False)
-                    fetched += 1
-                    print(f"[{i+1}/{total}] {baostock_code} incremental OK: {len(df)} rows from {start_date}", file=sys.stderr)
-                else:
-                    skipped += 1
-                    print(f"[{i+1}/{total}] {baostock_code} incremental SKIP: no new data", file=sys.stderr)
-
-            elif args.full:
-                # 全量模式：跳过已有 CSV
-                csv_path = OUT_DIR / f"{baostock_code}.csv"
-                if csv_path.exists():
-                    skipped += 1
-                    continue
-                df = fetch_stock(baostock_code, START_DATE)
-
-                if df is not None and len(df) > 0:
-                    df.to_csv(csv_path, index=False)
-                    fetched += 1
-                    print(f"[{i+1}/{total}] {baostock_code} OK: {len(df)} rows", file=sys.stderr)
-                else:
-                    failed += 1
-                    print(f"[{i+1}/{total}] {baostock_code} SKIP: no data", file=sys.stderr)
-
+            if inserted > 0:
+                fetched += 1
+                print(f"[{i+1}/{total}] {baostock_code} OK: {inserted} rows from {start_date}", file=sys.stderr)
             else:
-                print("[sync_15min_fetch] 请指定 --full 或 --incremental", file=sys.stderr)
-                return
+                skipped += 1
+                print(f"[{i+1}/{total}] {baostock_code} SKIP: no new data", file=sys.stderr)
 
-            # 每 500 只股票重连一次
             if (i + 1) % RECONNECT_EVERY == 0:
                 logout()
                 login()

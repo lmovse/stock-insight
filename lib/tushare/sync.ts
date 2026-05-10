@@ -510,15 +510,10 @@ export async function syncMinuteCandles() {
   await upsertSyncLog("sync_minute_candles", "running");
 
   try {
-    console.log("[sync] === Phase 1: fetching 15min data (incremental, config-driven) ===");
-    await runPythonScript("jobs/sync_15min_fetch.py --incremental");
+    console.log("[sync] === fetching 15min data (config-driven) ===");
+    await runPythonScript("jobs/sync_15min_fetch.py");
 
-    console.log("[sync] === Phase 2: importing incremental CSV to SQLite ===");
-    await runPythonScript("jobs/sync_15min_import.py --incremental");
-
-    const count = await prisma.minuteCandle.count();
-    await upsertSyncLog("sync_minute_candles", "success", count, count, 0);
-    console.log(`[sync] minute_candles done: ${count} records`);
+    console.log("[sync] minute_candles sync done");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     await upsertSyncLog("sync_minute_candles", "failed", 0, 0, 0, msg);
