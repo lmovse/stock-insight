@@ -485,15 +485,17 @@ export async function runFullSync() {
 // ─── runPythonScript ─────────────────────────────────────────────────────────
 import { exec } from "child_process";
 import { promisify } from "util";
+import { existsSync } from "fs";
 
 const execAsync = promisify(exec);
 const VENV_PYTHON = path.resolve(process.cwd(), ".venv/bin/python");
+const PYTHON_CMD = existsSync(VENV_PYTHON) ? VENV_PYTHON : "python3";
 
 async function runPythonScript(scriptPath: string): Promise<void> {
   const absolutePath = path.resolve(process.cwd(), scriptPath);
-  console.log(`[sync] Running Python script: ${absolutePath}`);
+  console.log(`[sync] Running Python script: ${absolutePath} (python: ${PYTHON_CMD})`);
   try {
-    const { stdout, stderr } = await execAsync(`${VENV_PYTHON} ${absolutePath}`, {
+    const { stdout, stderr } = await execAsync(`${PYTHON_CMD} ${absolutePath}`, {
       timeout: 10 * 60 * 1000, // 10 分钟超时
     });
     if (stdout) console.log(`[sync] ${scriptPath} stdout:`, stdout.trim());
