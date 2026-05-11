@@ -496,7 +496,7 @@ async function runPythonScript(scriptPath: string): Promise<void> {
   console.log(`[sync] Running Python script: ${absolutePath} (python: ${PYTHON_CMD})`);
   try {
     const { stdout, stderr } = await execAsync(`${PYTHON_CMD} ${absolutePath}`, {
-      timeout: 10 * 60 * 1000, // 10 分钟超时
+      timeout: 60 * 60 * 1000, // 60 分钟超时
     });
     if (stdout) console.log(`[sync] ${scriptPath} stdout:`, stdout.trim());
     if (stderr) console.warn(`[sync] ${scriptPath} stderr:`, stderr.trim());
