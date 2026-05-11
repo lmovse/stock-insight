@@ -11,11 +11,15 @@ import time
 import sys
 import sqlite3
 import uuid
+import os
 from pathlib import Path
 from datetime import datetime, timedelta, date
 
 WORK_DIR = Path(__file__).parent.parent
-DB_PATH = WORK_DIR / "prisma" / "dev.db"
+DB_PATH = os.environ.get("DATABASE_URL", str(WORK_DIR / "prisma" / "dev.db"))
+# DATABASE_URL格式: file:/path/to/dev.db 或 file:./prisma/dev.db
+if DB_PATH.startswith("file:"):
+    DB_PATH = DB_PATH[5:]  # 去掉 "file:" 前缀
 START_DATE = "2023-05-07"  # 近三年
 RECONNECT_EVERY = 100
 SLEEP_INTERVAL = 0.1

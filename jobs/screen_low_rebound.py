@@ -8,8 +8,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import sys
+import os
 
-DB_PATH = "prisma/dev.db"
+DB_PATH = os.environ.get("DATABASE_URL", "prisma/dev.db")
+# DATABASE_URL格式: file:/path/to/dev.db 或 file:./prisma/dev.db
+if DB_PATH.startswith("file:"):
+    DB_PATH = DB_PATH[5:]  # 去掉 "file:" 前缀
 
 # 获取所有股票代码
 def get_stock_codes():
