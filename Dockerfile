@@ -78,6 +78,18 @@ RUN if [ -f package-lock.json ]; then \
 
 FROM node:${NODE_VERSION} AS runner
 
+# Install Python and dependencies for running Python scripts
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python packages from pyproject.toml
+RUN pip3 install --no-cache-dir --break-system-packages \
+    baostock>=0.9.1 \
+    pandas \
+    numpy
+
 # Set working directory
 WORKDIR /app
 
@@ -102,6 +114,9 @@ RUN chown node:node .next
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+
+# Copy Python scripts directory
+COPY --from=builder --chown=node:node /app/jobs ./jobs
 
 # If you want to persist the fetch cache generated during the build so that
 # cached responses are available immediately on startup, uncomment this line:
