@@ -50,7 +50,7 @@ function LoginForm() {
       }
 
       await refresh();
-      router.push(redirect);
+      window.location.href = redirect;
     } catch {
       setErrors({ global: "网络错误" });
     } finally {
