@@ -122,13 +122,38 @@ export async function getMinuteKLineData(
   const prefix = code.startsWith("0") || code.startsWith("3") ? "sz" : "sh";
   const tsCode = `${prefix}.${code}`;
 
+  // Fetch extra 15-min candles to ensure enough data after aggregation to 60-min
+  const takeCount = period === "60min" ? count * 4 : count;
+
   const candles = await prisma.minuteCandle.findMany({
     where: { tsCode },
     orderBy: { tradeTime: "desc" },
-    take: count,
+    take: takeCount,
   });
 
-  return candles.reverse().map((c) => ({
+  const chronological = candles.reverse();
+
+  if (period === "60min") {
+    // Aggregate every 4 consecutive 15-min candles into one 60-min candle
+    const grouped: KLineData[] = [];
+    for (let i = 0; i < chronological.length; i += 4) {
+      const group = chronological.slice(i, i + 4);
+      if (group.length < 4) break; // Incomplete group at the end
+      grouped.push({
+        date: parseInt(group[0].tradeDate),
+        time: group[0].tradeTime,
+        open: group[0].open,
+        high: Math.max(...group.map((g) => g.high)),
+        low: Math.min(...group.map((g) => g.low)),
+        close: group[group.length - 1].close,
+        volume: group.reduce((sum, g) => sum + g.volume, 0),
+        amount: group.reduce((sum, g) => sum + (g.amount ?? 0), 0) || undefined,
+      });
+    }
+    return grouped.slice(-count);
+  }
+
+  return chronological.map((c) => ({
     date: parseInt(c.tradeDate),
     time: c.tradeTime,
     open: c.open,
