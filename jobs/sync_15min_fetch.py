@@ -116,8 +116,8 @@ def fetch_and_upsert(baostock_code: str) -> tuple[int, str]:
         # 有数据，增量：从最新日期的下一天开始
         latest_dt = datetime.strptime(latest, "%Y%m%d")
         start_dt = latest_dt + timedelta(days=1)
-        if start_dt.date() >= date.today():
-            return (0, start_dt.strftime("%Y-%m-%d"))  # 今天还没过，跳过
+        if start_dt.date() > date.today():
+            return (0, start_dt.strftime("%Y-%m-%d"))  # 明天才开始，跳过
         start_date = start_dt.strftime("%Y-%m-%d")
     else:
         # 无数据，全量

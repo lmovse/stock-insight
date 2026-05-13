@@ -105,21 +105,17 @@ def calc_kd(df: pd.DataFrame, n=9, m1=3, m2=3) -> pd.DataFrame:
     return df
 
 
-def find_low_rebound_v2(df: pd.DataFrame) -> list:
+def find_low_rebound_v2(df: pd.DataFrame, latest_date: str = None) -> list:
     """
     在30天数据中扫描所有可能的信号
-    条件：最低点在数据的前80%位置（有20%数据用于回测）
+    如果指定了 latest_date，只返回在最新日期产生的信号
     """
-    if len(df) < 60:
+    if len(df) < 16:
         return []
 
     results = []
-    # 只在前80%的数据中寻找信号，给后面20%留足够的回测空间
-    cutoff_idx = int(len(df) * 0.80)
-    search_df = df.iloc[:cutoff_idx]
-
     # 滑动窗口寻找信号：每次取16根30min K线（约2天）
-    for i in range(len(search_df) - 16):
+    for i in range(len(df) - 16):
         window = df.iloc[i:i + 16].copy()
         if len(window) < 4:
             continue
@@ -147,15 +143,22 @@ def find_low_rebound_v2(df: pd.DataFrame) -> list:
         k_now = after_data["k"].iloc[-1]
 
         if dif_rising and k_rising and dif_now > dif_before and k_now > k_before:
+            signal_time = window.loc[min_low_idx, "tradeTime"]
+            signal_date = signal_time[:8]
+
+            # 如果指定了 latest_date，只返回最新日期的信号
+            if latest_date and signal_date != latest_date:
+                continue
+
             results.append({
                 "tsCode": df["tsCode"].iloc[-1],
                 "minLow": round(window.loc[min_low_idx, "low"], 2),
-                "minLowTime": window.loc[min_low_idx, "tradeTime"],
+                "minLowTime": signal_time,
                 "dif": f"{dif_before:.4f} -> {dif_now:.4f}",
                 "k": f"{k_before:.2f} -> {k_now:.2f}",
                 "difChange": f"+{dif_now - dif_before:.4f}",
                 "kChange": f"+{k_now - k_before:.2f}",
-                "signalIdx": min_low_idx,  # 用于回测计算
+                "signalIdx": min_low_idx,
             })
 
     return results
@@ -235,6 +238,13 @@ def calc_future_return(df_30min: pd.DataFrame, signal_idx: int, days: int = 5) -
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--date", help="筛选特定日期的信号，如 20260512")
+    args = parser.parse_args()
+
+    latest_date = args.date if args.date else None
+
     print("正在获取股票列表...", file=sys.stderr)
     codes = get_stock_codes()
     print(f"共 {len(codes)} 只股票", file=sys.stderr)
@@ -257,7 +267,7 @@ def main():
             df_30min = calc_macd(df_30min)
             df_30min = calc_kd(df_30min)
 
-            signals = find_low_rebound_v2(df_30min)
+            signals = find_low_rebound_v2(df_30min, latest_date)
             for sig in signals:
                 backtest = calc_future_return(df_30min, sig["signalIdx"], days=5)
                 if backtest and backtest.get('return5d') is not None:
@@ -272,8 +282,12 @@ def main():
             print(f"已处理 {i+1}/{len(codes)}", file=sys.stderr)
 
     print(f"\n{'='*120}")
-    print(f"共找到 {len(results)} 个有效信号（均有完整5日回测数据）")
+    print(f"共找到 {len(results)} 个有效信号" + (f"（日期: {latest_date}）" if latest_date else ""))
     print(f"{'='*120}")
+
+    if not results:
+        print("没有找到符合条件的信号")
+        return
 
     # 按5日涨幅排序
     results.sort(key=lambda x: x.get('return5d') or 0, reverse=True)
@@ -296,7 +310,7 @@ def main():
         win_rate_5d = len([r for r in valid_5d if r['return5d'] > 0]) / len(valid_5d) * 100
 
         print(f"\n{'='*60}")
-        print(f"策略回测统计 (共{len(results)}个样本)")
+        print(f"信号统计 (共{len(results)}个样本)")
         print(f"{'='*60}")
         print(f"3日策略: 平均涨幅 {avg_3d:+.2f}%, 胜率 {win_rate_3d:.1f}%")
         print(f"5日策略: 平均涨幅 {avg_5d:+.2f}%, 胜率 {win_rate_5d:.1f}%")
