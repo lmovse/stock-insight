@@ -7,6 +7,18 @@ interface Stock {
   market: "sh" | "sz" | "bj";
 }
 
+interface StockConfig {
+  stockCode: string;
+  purpose: string;
+}
+
+const CATEGORIES = [
+  { key: "FIFTEEN_MIN", label: "陈" },
+  { key: "ZENG", label: "曾" },
+  { key: "SONG", label: "宋" },
+  { key: "ZHANG", label: "张" },
+];
+
 export default function StockSelector({
   value,
   onChange,
@@ -17,6 +29,8 @@ export default function StockSelector({
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Stock[]>([]);
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
+  const [categoryStocks, setCategoryStocks] = useState<Record<string, string[]>>({});
+  const [loadingCategories, setLoadingCategories] = useState(false);
 
   useEffect(() => {
     fetch("/api/watchlist")
@@ -31,6 +45,23 @@ export default function StockSelector({
         }
       })
       .catch(() => setWatchlist([]));
+  }, []);
+
+  // 加载各分类的股票
+  useEffect(() => {
+    setLoadingCategories(true);
+    Promise.all(
+      CATEGORIES.map(async (cat) => {
+        const res = await fetch(`/api/config/stocks?purpose=${cat.key}`);
+        const data = await res.json();
+        return { key: cat.key, codes: Array.isArray(data) ? data.map((c: StockConfig) => c.stockCode) : [] };
+      })
+    ).then((results) => {
+      const map: Record<string, string[]> = {};
+      results.forEach((r) => { map[r.key] = r.codes; });
+      setCategoryStocks(map);
+      setLoadingCategories(false);
+    }).catch(() => setLoadingCategories(false));
   }, []);
 
   const handleSearch = async () => {
@@ -48,8 +79,23 @@ export default function StockSelector({
     setResults([]);
   };
 
+  const addStocksByCategory = (codes: string[]) => {
+    const newCodes = codes.filter((c) => !value.includes(c));
+    if (newCodes.length > 0) {
+      onChange([...value, ...newCodes]);
+    }
+  };
+
   const removeStock = (code: string) => {
     onChange(value.filter((c) => c !== code));
+  };
+
+  const isCategoryFullySelected = (codes: string[]) => {
+    return codes.length > 0 && codes.every((c) => value.includes(c));
+  };
+
+  const isCategoryPartiallySelected = (codes: string[]) => {
+    return codes.some((c) => value.includes(c)) && !codes.every((c) => value.includes(c));
   };
 
   return (
@@ -68,6 +114,36 @@ export default function StockSelector({
         ))}
         {value.length === 0 && <span className="text-xs text-[var(--text-muted)]">未选择股票</span>}
       </div>
+
+      {/* 分类快捷选择 */}
+      {!loadingCategories && (
+        <div className="mb-4 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
+          <p className="text-xs text-[var(--text-muted)] mb-2">按分类添加</p>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((cat) => {
+              const codes = categoryStocks[cat.key] || [];
+              const isFull = isCategoryFullySelected(codes);
+              const isPartial = isCategoryPartiallySelected(codes);
+              return (
+                <button
+                  key={cat.key}
+                  onClick={() => addStocksByCategory(codes)}
+                  disabled={codes.length === 0}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                    isFull
+                      ? "bg-green-500/20 border-green-500/30 text-green-400"
+                      : isPartial
+                      ? "bg-yellow-500/20 border-yellow-500/30 text-yellow-400"
+                      : "border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  } disabled:opacity-30`}
+                >
+                  {cat.label} ({codes.length})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 搜索框 */}
       <div className="flex gap-2">
