@@ -114,7 +114,7 @@ export default function StockConfigTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--surface-elevated)]">
-                <th className="w-10 px-3 py-2 text-left">
+                <th scope="col" className="w-10 px-3 py-2 text-left">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -122,10 +122,10 @@ export default function StockConfigTable({
                     className="rounded"
                   />
                 </th>
-                <th className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">股票代码</th>
-                <th className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">股票名称</th>
-                <th className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">状态</th>
-                <th className="px-3 py-2 text-right text-[var(--text-muted)] font-medium">操作</th>
+                <th scope="col" className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">股票代码</th>
+                <th scope="col" className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">股票名称</th>
+                <th scope="col" className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">状态</th>
+                <th scope="col" className="px-3 py-2 text-right text-[var(--text-muted)] font-medium">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -147,9 +147,18 @@ export default function StockConfigTable({
                   <td className="px-3 py-2">
                     <button
                       onClick={() => onToggle(config.id, !config.enabled)}
+                      onKeyDown={(e) => {
+                        if (e.key === " " || e.key === "Enter") {
+                          e.preventDefault();
+                          onToggle(config.id, !config.enabled);
+                        }
+                      }}
                       className={`relative w-10 h-5 rounded-full transition-colors ${
                         config.enabled ? "bg-[var(--up-color)]" : "bg-[var(--text-muted)]"
                       }`}
+                      role="switch"
+                      aria-checked={config.enabled}
+                      tabIndex={0}
                     >
                       <span
                         className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
