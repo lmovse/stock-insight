@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/config/categories - 获取所有分类
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   try {
     const categories = await prisma.systemCategory.findMany({
       orderBy: { order: "asc" },
@@ -16,6 +20,9 @@ export async function GET() {
 
 // POST /api/config/categories - 创建分类
 export async function POST(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   try {
     const body = await req.json();
     const { code, name } = body;
