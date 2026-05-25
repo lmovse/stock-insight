@@ -10,11 +10,22 @@ export async function GET(req: NextRequest) {
 
   const configs = await prisma.stockConfig.findMany({
     where: { purpose },
-    include: { stockBasic: true },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(configs);
+  // Manual join with StockBasic to get stock names
+  const stockCodes = configs.map((c) => c.stockCode);
+  const stockBasics = await prisma.stockBasic.findMany({
+    where: { stockCode: { in: stockCodes } },
+  });
+  const stockBasicMap = new Map(stockBasics.map((s) => [s.stockCode, s]));
+
+  const result = configs.map((config) => ({
+    ...config,
+    stockBasic: stockBasicMap.get(config.stockCode) || null,
+  }));
+
+  return NextResponse.json(result);
 }
 
 // POST /api/config/stocks
@@ -32,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "no valid codes" }, { status: 400 });
   }
 
-  // upsert 批量创建或更新
+  // upsert: create if not exists (does not update existing records)
   await Promise.all(
     codes.map((code: string) =>
       prisma.stockConfig.upsert({
