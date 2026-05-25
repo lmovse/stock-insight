@@ -3,6 +3,8 @@ import type { StockInfo, KLineData } from "./types";
 import type { StockBasic } from "@prisma/client";
 
 function codeToTsCode(code: string): string {
+  // Already has suffix (e.g., "000021.SZ")
+  if (code.includes(".")) return code;
   const c = code.startsWith("0") || code.startsWith("3") ? "SZ" : code.startsWith("4") || code.startsWith("8") ? "BJ" : "SH";
   return `${code}.${c}`;
 }
