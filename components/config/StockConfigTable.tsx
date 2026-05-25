@@ -105,7 +105,7 @@ export default function StockConfigTable({
       </div>
 
       {/* 表格 */}
-      <div className="overflow-auto flex-1 max-h-[calc(100dvh-220px)]">
+      <div className="overflow-auto flex-1 max-h-[calc(100dvh-220px)] pb-4">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10" style={{ background: 'var(--surface-solid)' }}>
             <tr className="border-b border-[var(--border)]">
