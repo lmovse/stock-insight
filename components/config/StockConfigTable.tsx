@@ -69,7 +69,7 @@ export default function StockConfigTable({
   };
 
   return (
-    <div className="glass-card rounded-xl flex-1 overflow-hidden flex flex-col">
+    <div className="glass-card rounded-xl flex-1 overflow-hidden flex flex-col mx-4 my-4">
       {/* 搜索操作栏 */}
       <div className="shrink-0 flex flex-wrap items-center gap-3 px-4 py-3 border-b border-[var(--border)]">
         <input
