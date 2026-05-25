@@ -69,7 +69,7 @@ export default function StockConfigTable({
   };
 
   return (
-    <div className="glass-card rounded-xl flex-1 flex flex-col mx-4 my-4 p-4">
+    <div className="glass-card rounded-xl flex-1 overflow-hidden flex flex-col">
       {/* 搜索操作栏 */}
       <div className="shrink-0 flex flex-wrap items-center gap-3 px-4 py-3 border-b border-[var(--border)]">
         <input
@@ -105,7 +105,7 @@ export default function StockConfigTable({
       </div>
 
       {/* 表格 */}
-      <div className="overflow-auto flex-1 max-h-[calc(100dvh-280px)]">
+      <div className="overflow-x-auto flex-1">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10" style={{ background: 'var(--surface-solid)' }}>
             <tr className="border-b border-[var(--border)]">
