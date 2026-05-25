@@ -10,7 +10,7 @@ export default function ConfigPage() {
   const [activeTab, setActiveTab] = useState<Tab>("stocks");
 
   return (
-    <div className="h-[calc(100dvh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4">
+    <div className="h-[calc(100dvh-52px)] flex flex-col bg-[var(--background)] overflow-hidden p-4 animate-page-enter">
       {/* Header */}
       <div className="mb-4 shrink-0">
         <h1 className="text-xl font-bold text-[var(--text-primary)]">系统配置</h1>
