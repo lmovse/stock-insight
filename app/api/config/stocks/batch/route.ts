@@ -10,10 +10,14 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "ids and enabled required" }, { status: 400 });
   }
 
-  await prisma.stockConfig.updateMany({
-    where: { id: { in: ids } },
-    data: { enabled },
-  });
+  try {
+    await prisma.stockConfig.updateMany({
+      where: { id: { in: ids } },
+      data: { enabled },
+    });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true, count: ids.length });
 }
@@ -27,9 +31,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "ids required" }, { status: 400 });
   }
 
-  await prisma.stockConfig.deleteMany({
-    where: { id: { in: ids } },
-  });
+  try {
+    await prisma.stockConfig.deleteMany({
+      where: { id: { in: ids } },
+    });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true, count: ids.length });
 }
