@@ -69,15 +69,15 @@ export default function StockConfigTable({
   };
 
   return (
-    <div className="space-y-3">
-      {/* 操作栏 */}
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="glass-card rounded-xl flex-1 overflow-hidden flex flex-col">
+      {/* 搜索操作栏 */}
+      <div className="shrink-0 flex flex-wrap items-center gap-3 px-4 py-3 border-b border-[var(--border)]">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="搜索股票代码/名称..."
-          className="px-3 py-1.5 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-48"
+          className="px-3 py-2 text-sm rounded-lg bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-40"
         />
         {selected.size > 0 && (
           <>
@@ -105,36 +105,38 @@ export default function StockConfigTable({
       </div>
 
       {/* 表格 */}
-      {filtered.length === 0 ? (
-        <div className="flex items-center justify-center h-32">
-          <p className="text-[var(--text-muted)] text-sm">暂无数据</p>
-        </div>
-      ) : (
-        <div className="border border-[var(--border)] rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--surface-elevated)]">
-                <th scope="col" className="w-10 px-3 py-2 text-left">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleAll}
-                    className="rounded"
-                  />
-                </th>
-                <th scope="col" className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">股票代码</th>
-                <th scope="col" className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">股票名称</th>
-                <th scope="col" className="px-3 py-2 text-left text-[var(--text-muted)] font-medium">状态</th>
-                <th scope="col" className="px-3 py-2 text-right text-[var(--text-muted)] font-medium">操作</th>
+      <div className="overflow-x-auto flex-1">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10" style={{ background: 'var(--surface-solid)' }}>
+            <tr className="border-b border-[var(--border)]">
+              <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  className="rounded"
+                />
+              </th>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">股票代码</th>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">股票名称</th>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">状态</th>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center py-8">
+                  <span className="text-sm text-[var(--text-muted)]">暂无数据</span>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filtered.map((config) => (
+            ) : (
+              filtered.map((config) => (
                 <tr
                   key={config.id}
                   className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] transition-colors"
                 >
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <input
                       type="checkbox"
                       checked={selected.has(config.id)}
@@ -142,9 +144,9 @@ export default function StockConfigTable({
                       className="rounded"
                     />
                   </td>
-                  <td className="px-3 py-2 font-mono text-[var(--text-primary)]">{config.stockCode}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{config.stockBasic?.name || "—"}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3 font-mono text-[var(--text-primary)]">{config.stockCode}</td>
+                  <td className="px-4 py-3 text-[var(--text-secondary)]">{config.stockBasic?.name || "—"}</td>
+                  <td className="px-4 py-3">
                     <button
                       onClick={() => onToggle(config.id, !config.enabled)}
                       onKeyDown={(e) => {
@@ -167,7 +169,7 @@ export default function StockConfigTable({
                       />
                     </button>
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-4 py-3">
                     <button
                       onClick={async () => {
                         if (!confirm("确定删除？")) return;
@@ -180,11 +182,11 @@ export default function StockConfigTable({
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

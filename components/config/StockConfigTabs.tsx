@@ -81,7 +81,7 @@ export default function StockConfigTabs() {
   return (
     <div className="flex flex-col h-full">
       {/* Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-[var(--border)] px-2 shrink-0">
+      <div className="flex items-center gap-1 border-b border-[var(--border)] px-4 shrink-0">
         {PURPOSES.map((purpose) => (
           <button
             key={purpose}
@@ -95,26 +95,23 @@ export default function StockConfigTabs() {
             {PURPOSE_LABELS[purpose]}
           </button>
         ))}
-      </div>
-
-      {/* 操作栏 */}
-      <div className="flex items-center justify-between px-2 py-3 shrink-0">
-        <span className="text-xs text-[var(--text-muted)]">
-          共 {configs.length} 条配置
-        </span>
+        <div className="flex-1" />
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 text-sm font-semibold rounded-lg pill-active transition-colors"
+          className="px-4 py-2 text-sm font-semibold rounded-lg pill-active transition-colors self-center"
         >
           添加股票
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-2 pb-4 min-h-0">
+      <div className="flex-1 overflow-hidden min-h-0">
         {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <div className="animate-spin w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full" />
+          <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+              <span className="text-sm text-[var(--text-muted)]">加载中...</span>
+            </div>
           </div>
         ) : (
           <StockConfigTable
