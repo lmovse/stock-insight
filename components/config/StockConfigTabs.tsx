@@ -11,11 +11,12 @@ interface StockConfig {
   stockBasic?: { name: string } | null;
 }
 
-const PURPOSES = ["FIFTEEN_MIN", "DAILY", "REALTIME"] as const;
+const PURPOSES = ["FIFTEEN_MIN", "ZENG", "SONG", "ZHANG"] as const;
 const PURPOSE_LABELS: Record<string, string> = {
   FIFTEEN_MIN: "陈",
-  DAILY: "曾",
-  REALTIME: "宋",
+  ZENG: "曾",
+  SONG: "宋",
+  ZHANG: "张",
 };
 
 export default function StockConfigTabs() {
