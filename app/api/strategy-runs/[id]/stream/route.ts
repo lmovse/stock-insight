@@ -61,96 +61,74 @@ export async function GET(
         return r?.status === "cancelled";
       };
 
-      for (const stockCode of stockCodes) {
-        // Check cancellation before starting each stock
+      const BATCH_SIZE = 10;
+
+      // Process a single stock, returns result info
+      const processStock = async (stockCode: string): Promise<{ stockCode: string; result: string; reason: string }> => {
+        const allData = await getKLineData(stockCode, "daily", 300);
+        console.log(`[stream/${id}] ${stockCode}: DB returned ${allData.length} records`);
+
+        const start = parseInt(run.startDate.replace(/-/g, ""));
+        const end = parseInt(run.endDate.replace(/-/g, ""));
+
+        const klineData = allData.filter((d: { date: number }) => d.date >= start && d.date <= end);
+        console.log(`[stream/${id}] ${stockCode}: filtered ${klineData.length} records in range ${start}-${end}`);
+        if (klineData.length === 0) {
+          console.warn(`[stream/${id}] ${stockCode}: no data in range ${start}-${end}, skipping AI call`);
+          return { stockCode, result: "错误", reason: `指定区间无数据` };
+        }
+        const klineText = formatKLineData(klineData);
+        console.log(`[stream/${id}] ${stockCode}: klineText preview:`, klineText.slice(0, 200));
+
+        const criteria = run.strategy.criteria ?? "";
+        const messages = buildPromptMessages(promptTemplate, stockCode, dateRange, klineText, criteria);
+
+        const abortController = new AbortController();
+
+        // Poll for cancellation during AI call (every 2 seconds)
+        const pollCancelled = setInterval(async () => {
+          if (await checkCancelled()) {
+            abortController.abort();
+          }
+        }, 2000);
+
+        try {
+          const aiResponse = await callAI(messages, aiOptions, abortController.signal);
+          clearInterval(pollCancelled);
+          const parsed = parseAIResponse(aiResponse.content);
+          return { stockCode, result: parsed.result, reason: parsed.reason };
+        } catch (err) {
+          clearInterval(pollCancelled);
+          if (err instanceof Error && err.name === "AbortError") {
+            return { stockCode, result: "取消", reason: "任务已取消" };
+          }
+          throw err;
+        }
+      };
+
+      // Process stocks in batches of 10
+      for (let i = 0; i < stockCodes.length; i += BATCH_SIZE) {
+        // Check cancellation before starting each batch
         if (await checkCancelled()) {
           send("done", { status: "cancelled", summary: `已取消，${done}/${total} 支完成` });
           break;
         }
 
-        send("progress", { done, total, currentStock: stockCode });
+        const batch = stockCodes.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(stockCodes.length / BATCH_SIZE);
+        send("progress", { done, total, currentStock: `批次${batchNum}/${totalBatches}` });
 
-        try {
-          // Get K-line data directly from database
-          const allData = await getKLineData(stockCode, "daily", 300);
-          console.log(`[stream/${id}] ${stockCode}: DB returned ${allData.length} records`);
+        // Run batch in parallel
+        const results = await Promise.all(batch.map(processStock));
 
-          const start = parseInt(run.startDate.replace(/-/g, ""));
-          const end = parseInt(run.endDate.replace(/-/g, ""));
-
-          const klineData = allData.filter((d: { date: number }) => d.date >= start && d.date <= end);
-          console.log(`[stream/${id}] ${stockCode}: filtered ${klineData.length} records in range ${start}-${end}`);
-          if (klineData.length === 0) {
-            console.warn(`[stream/${id}] ${stockCode}: no data in range ${start}-${end}, skipping AI call`);
-            await prisma.strategyRunResult.create({
-              data: { runId: id, stockCode, result: "错误", reason: `指定区间(${run.startDate}~${run.endDate})内无K线数据，数据库最早已期: ${allData[0]?.date}` },
-            });
-            send("result", { stockCode, result: "错误", reason: `指定区间无数据` });
-            done++;
-            send("progress", { done, total, currentStock: stockCode });
-            continue;
-          }
-          const klineText = formatKLineData(klineData);
-          console.log(`[stream/${id}] ${stockCode}: klineText preview:`, klineText.slice(0, 200));
-
-          const criteria = run.strategy.criteria ?? "";
-          const messages = buildPromptMessages(promptTemplate, stockCode, dateRange, klineText, criteria);
-
-          // Create AbortController for this AI call
-          const abortController = new AbortController();
-
-          // Poll for cancellation during AI call (every 2 seconds)
-          const pollCancelled = setInterval(async () => {
-            if (await checkCancelled()) {
-              abortController.abort();
-            }
-          }, 2000);
-
-          try {
-            const aiResponse = await callAI(messages, aiOptions, abortController.signal);
-            clearInterval(pollCancelled);
-
-            const parsed = parseAIResponse(aiResponse.content);
-
-            await prisma.strategyRunResult.create({
-              data: {
-                runId: id,
-                stockCode,
-                result: parsed.result,
-                reason: parsed.reason,
-                rawResponse: aiResponse.content,
-              },
-            });
-
-            send("result", { stockCode, result: parsed.result, reason: parsed.reason });
-          } catch (err) {
-            clearInterval(pollCancelled);
-
-            // Check if it was aborted
-            if (err instanceof Error && err.name === "AbortError") {
-              send("done", { status: "cancelled", summary: `已取消，${done}/${total} 支完成` });
-              break;
-            }
-            throw err;
-          }
-
+        for (const { stockCode, result, reason } of results) {
+          await prisma.strategyRunResult.create({
+            data: { runId: id, stockCode, result, reason, rawResponse: null },
+          });
+          send("result", { stockCode, result, reason });
           done++;
           send("progress", { done, total, currentStock: stockCode });
-        } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : "Unknown error";
-
-          await prisma.strategyRunResult.create({
-            data: {
-              runId: id,
-              stockCode,
-              result: "错误",
-              reason: errorMsg,
-              rawResponse: null,
-            },
-          });
-
-          send("result", { stockCode, result: "错误", reason: errorMsg });
-          done++;
         }
       }
 
