@@ -11,21 +11,35 @@ interface StockConfig {
   stockBasic?: { name: string } | null;
 }
 
-const PURPOSES = ["FIFTEEN_MIN", "ZENG", "SONG", "ZHANG"] as const;
-const PURPOSE_LABELS: Record<string, string> = {
-  FIFTEEN_MIN: "陈",
-  ZENG: "曾",
-  SONG: "宋",
-  ZHANG: "张",
-};
+interface Category {
+  id: string;
+  code: string;
+  name: string;
+  order: number;
+}
 
 export default function StockConfigTabs() {
-  const [activeTab, setActiveTab] = useState<string>(PURPOSES[0]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("");
   const [configs, setConfigs] = useState<StockConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // 加载分类
+  useEffect(() => {
+    fetch("/api/config/categories")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCategories(data);
+          setActiveTab(data[0].code);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const fetchConfigs = useCallback(async () => {
+    if (!activeTab) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/config/stocks?purpose=${activeTab}`);
@@ -79,21 +93,34 @@ export default function StockConfigTabs() {
     fetchConfigs();
   };
 
+  const purposeLabels = categories.reduce((acc, cat) => {
+    acc[cat.code] = cat.name;
+    return acc;
+  }, {} as Record<string, string>);
+
+  if (categories.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <span className="text-sm text-[var(--text-muted)]">暂无分类，请先添加分类</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Tab Bar */}
       <div className="flex items-center gap-1 px-4 pt-4 shrink-0">
-        {PURPOSES.map((purpose) => (
+        {categories.map((cat) => (
           <button
-            key={purpose}
-            onClick={() => setActiveTab(purpose)}
+            key={cat.id}
+            onClick={() => setActiveTab(cat.code)}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === purpose
+              activeTab === cat.code
                 ? "bg-accent/20 text-[var(--accent)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
             }`}
           >
-            {PURPOSE_LABELS[purpose]}
+            {cat.name}
           </button>
         ))}
         <div className="flex-1" />
@@ -129,7 +156,7 @@ export default function StockConfigTabs() {
       {showAddModal && (
         <StockConfigOperateModal
           purpose={activeTab}
-          purposeLabels={PURPOSE_LABELS}
+          purposeLabels={purposeLabels}
           onClose={() => setShowAddModal(false)}
           onSuccess={fetchConfigs}
         />

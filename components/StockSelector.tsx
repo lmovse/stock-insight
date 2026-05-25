@@ -12,12 +12,12 @@ interface StockConfig {
   purpose: string;
 }
 
-const CATEGORIES = [
-  { key: "FIFTEEN_MIN", label: "陈" },
-  { key: "DAILY", label: "曾" },
-  { key: "REALTIME", label: "宋" },
-  { key: "ZHANG", label: "张" },
-];
+interface Category {
+  id: string;
+  code: string;
+  name: string;
+  order: number;
+}
 
 export default function StockSelector({
   value,
@@ -29,6 +29,7 @@ export default function StockSelector({
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Stock[]>([]);
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [categoryStocks, setCategoryStocks] = useState<Record<string, string[]>>({});
   const [loadingCategories, setLoadingCategories] = useState(false);
 
@@ -47,14 +48,27 @@ export default function StockSelector({
       .catch(() => setWatchlist([]));
   }, []);
 
+  // 加载分类
+  useEffect(() => {
+    fetch("/api/config/categories")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setCategories(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // 加载各分类的股票
   useEffect(() => {
+    if (categories.length === 0) return;
     setLoadingCategories(true);
     Promise.all(
-      CATEGORIES.map(async (cat) => {
-        const res = await fetch(`/api/config/stocks?purpose=${cat.key}`);
+      categories.map(async (cat) => {
+        const res = await fetch(`/api/config/stocks?purpose=${cat.code}`);
         const data = await res.json();
-        return { key: cat.key, codes: Array.isArray(data) ? data.map((c: StockConfig) => c.stockCode) : [] };
+        return { key: cat.code, codes: Array.isArray(data) ? data.map((c: StockConfig) => c.stockCode) : [] };
       })
     ).then((results) => {
       const map: Record<string, string[]> = {};
@@ -62,7 +76,7 @@ export default function StockSelector({
       setCategoryStocks(map);
       setLoadingCategories(false);
     }).catch(() => setLoadingCategories(false));
-  }, []);
+  }, [categories]);
 
   const handleSearch = async () => {
     if (!search.trim()) return;
@@ -116,17 +130,17 @@ export default function StockSelector({
       </div>
 
       {/* 分类快捷选择 */}
-      {!loadingCategories && (
+      {!loadingCategories && categories.length > 0 && (
         <div className="mb-4 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
           <p className="text-xs text-[var(--text-muted)] mb-2">按分类添加</p>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => {
-              const codes = categoryStocks[cat.key] || [];
+            {categories.map((cat) => {
+              const codes = categoryStocks[cat.code] || [];
               const isFull = isCategoryFullySelected(codes);
               const isPartial = isCategoryPartiallySelected(codes);
               return (
                 <button
-                  key={cat.key}
+                  key={cat.id}
                   onClick={() => addStocksByCategory(codes)}
                   disabled={codes.length === 0}
                   className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
@@ -137,7 +151,7 @@ export default function StockSelector({
                       : "border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   } disabled:opacity-30`}
                 >
-                  {cat.label} ({codes.length})
+                  {cat.name} ({codes.length})
                 </button>
               );
             })}
