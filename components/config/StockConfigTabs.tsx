@@ -105,7 +105,7 @@ export default function StockConfigTabs() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0 mt-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="flex items-center justify-center gap-2">
