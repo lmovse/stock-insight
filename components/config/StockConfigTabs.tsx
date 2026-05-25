@@ -81,15 +81,15 @@ export default function StockConfigTabs() {
   return (
     <div className="flex flex-col h-full">
       {/* Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-[var(--border)] px-4 shrink-0">
+      <div className="flex items-center gap-1 px-4 pt-4 shrink-0">
         {PURPOSES.map((purpose) => (
           <button
             key={purpose}
             onClick={() => setActiveTab(purpose)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeTab === purpose
-                ? "border-[var(--accent)] text-[var(--accent)]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                ? "bg-accent/20 text-[var(--accent)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
             }`}
           >
             {PURPOSE_LABELS[purpose]}
