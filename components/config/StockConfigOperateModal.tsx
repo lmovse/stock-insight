@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Props {
   purpose: string;
@@ -13,6 +13,16 @@ export default function StockConfigOperateModal({ purpose, purposeLabels, onClos
   const [codes, setCodes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const handleSubmit = async () => {
     const codeList = codes.split("\n").map((c) => c.trim()).filter(Boolean);
@@ -53,7 +63,7 @@ export default function StockConfigOperateModal({ purpose, purposeLabels, onClos
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-            添加股票 - {purposeLabels[purpose]}
+            添加股票 - {purposeLabels[purpose] || purpose}
           </h3>
           <button
             onClick={onClose}
@@ -65,10 +75,12 @@ export default function StockConfigOperateModal({ purpose, purposeLabels, onClos
 
         <div className="p-4">
           <textarea
+            ref={textareaRef}
             value={codes}
             onChange={(e) => setCodes(e.target.value)}
             placeholder="输入股票代码，每行一个，如：&#10;600000.SH&#10;000001.SZ"
             rows={6}
+            disabled={loading}
             className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none font-mono"
           />
           {error && (
