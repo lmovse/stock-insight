@@ -53,19 +53,29 @@ export default function StockConfigTabs() {
   };
 
   const handleDelete = async (ids: string[]) => {
-    await fetch("/api/config/stocks/batch", {
+    const res = await fetch("/api/config/stocks/batch", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     });
+    if (!res.ok) {
+      alert("删除失败");
+      return;
+    }
+    fetchConfigs();
   };
 
   const handleBatchToggle = async (ids: string[], enabled: boolean) => {
-    await fetch("/api/config/stocks/batch", {
+    const res = await fetch("/api/config/stocks/batch", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids, enabled }),
     });
+    if (!res.ok) {
+      alert("操作失败");
+      return;
+    }
+    fetchConfigs();
   };
 
   return (
