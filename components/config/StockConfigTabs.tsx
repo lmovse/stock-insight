@@ -13,9 +13,9 @@ interface StockConfig {
 
 const PURPOSES = ["FIFTEEN_MIN", "DAILY", "REALTIME"] as const;
 const PURPOSE_LABELS: Record<string, string> = {
-  FIFTEEN_MIN: "15分钟线",
-  DAILY: "日线",
-  REALTIME: "实时",
+  FIFTEEN_MIN: "陈",
+  DAILY: "曾",
+  REALTIME: "宋",
 };
 
 export default function StockConfigTabs() {
