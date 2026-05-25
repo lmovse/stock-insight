@@ -14,8 +14,8 @@ interface StockConfig {
 
 const CATEGORIES = [
   { key: "FIFTEEN_MIN", label: "陈" },
-  { key: "ZENG", label: "曾" },
-  { key: "SONG", label: "宋" },
+  { key: "DAILY", label: "曾" },
+  { key: "REALTIME", label: "宋" },
   { key: "ZHANG", label: "张" },
 ];
 
