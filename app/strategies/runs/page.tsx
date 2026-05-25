@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
 
 interface Run {
   id: string;
@@ -12,18 +11,6 @@ interface Run {
   stockCodes: string;
   startDate: string;
   endDate: string;
-}
-
-interface RunDetail {
-  id: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  stockCodes: string;
-  strategy: { name: string; prompt: { name: string; content: string } };
-  results: { stockCode: string; result: string; reason: string | null }[];
-  startedAt: string | null;
-  finishedAt: string | null;
 }
 
 const PAGE_SIZE = 10;
@@ -36,11 +23,6 @@ export default function StrategyRunsPage() {
   const [stockCodeSearch, setStockCodeSearch] = useState("");
   const [strategyNameSearch, setStrategyNameSearch] = useState("");
   const [strategies, setStrategies] = useState<{ id: string; name: string }[]>([]);
-
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [stockNames, setStockNames] = useState<Record<string, string>>({});
 
   const fetchRuns = useCallback(() => {
     setLoading(true);
@@ -75,44 +57,6 @@ export default function StrategyRunsPage() {
   const handleSearch = () => {
     setPage(0);
     fetchRuns();
-  };
-
-  const handleViewDetail = async (runId: string) => {
-    setSelectedRunId(runId);
-    setDetailLoading(true);
-    setRunDetail(null);
-    try {
-      const res = await fetch(`/api/strategy-runs/${runId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRunDetail(data);
-        // Fetch stock names
-        const codes = data.results?.map((r: { stockCode: string }) => r.stockCode) || [];
-        const names: Record<string, string> = {};
-        await Promise.all(
-          codes.map(async (code: string) => {
-            if (!names[code]) {
-              try {
-                const r = await fetch(`/api/stocks/${code}`);
-                if (r.ok) {
-                  const info = await r.json();
-                  names[code] = info.name || code;
-                }
-              } catch {}
-            }
-          })
-        );
-        setStockNames(names);
-      }
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
-  const closeDetail = () => {
-    setSelectedRunId(null);
-    setRunDetail(null);
-    setStockNames({});
   };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -234,12 +178,12 @@ export default function StrategyRunsPage() {
                           {new Date(run.createdAt).toLocaleString()}
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() => handleViewDetail(run.id)}
+                          <Link
+                            href={`/strategies/runs/${run.id}`}
                             className="text-xs text-[var(--accent)] hover:underline"
                           >
                             查看详情
-                          </button>
+                          </Link>
                         </td>
                       </tr>
                     );
@@ -274,74 +218,6 @@ export default function StrategyRunsPage() {
           )}
         </div>
       </div>
-
-      {/* Detail Modal */}
-      {selectedRunId && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
-          onClick={closeDetail}
-        >
-          <div
-            className="glass-card rounded-2xl w-full max-w-2xl max-h-[80dvh] flex flex-col overflow-hidden animate-dialog-enter"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] shrink-0">
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">运行详情</h2>
-              <button
-                onClick={closeDetail}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6">
-              {detailLoading ? (
-                <div className="flex items-center justify-center py-12 gap-3">
-                  <div className="w-6 h-6 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
-                  <span className="text-sm text-[var(--text-muted)]">加载中...</span>
-                </div>
-              ) : runDetail ? (
-                <>
-                  <div className="flex gap-4 mb-4">
-                    <span className="text-green-400 text-sm">
-                      符合: {runDetail.results.filter((r) => r.result === "符合").length}
-                    </span>
-                    <span className="text-yellow-400 text-sm">
-                      不符合: {runDetail.results.filter((r) => r.result === "不符合").length}
-                    </span>
-                    <span className="text-red-400 text-sm">
-                      错误: {runDetail.results.filter((r) => r.result === "错误").length}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {runDetail.results.map((r, i) => (
-                      <div key={i} className="result-item flex flex-wrap gap-2 p-3 rounded-lg bg-[var(--background)]">
-                        <span className="font-mono text-xs shrink-0 text-[var(--text-primary)]">{stockNames[r.stockCode] || r.stockCode}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-                          r.result === "符合" ? "bg-green-500/20 text-green-400" :
-                          r.result === "不符合" ? "bg-yellow-500/20 text-yellow-400" :
-                          "bg-red-500/20 text-red-400"
-                        }`}>
-                          {r.result}
-                        </span>
-                        <div className="w-full text-xs text-[var(--text-muted)] leading-relaxed prose">
-                          {r.reason ? (
-                            <ReactMarkdown>{r.reason}</ReactMarkdown>
-                          ) : "无"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-[var(--text-muted)] text-center py-8">加载失败</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
