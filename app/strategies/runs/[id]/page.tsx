@@ -1,11 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 
 interface RunResult {
+  id: string;
   stockCode: string;
-  result: string;
+  status: string;
+  result: string | null;
   reason: string | null;
 }
 
@@ -15,14 +17,13 @@ interface RunDetail {
   startDate: string;
   endDate: string;
   stockCodes: string;
-  dataConfig: string;
   strategy: { name: string; prompt: { name: string; content: string } };
   results: RunResult[];
   startedAt: string | null;
   finishedAt: string | null;
 }
 
-type FilterTab = "all" | "compliant" | "non-compliant" | "error";
+type FilterTab = "all" | "compliant" | "non-compliant" | "error" | "waiting" | "running";
 
 export default function RunDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [run, setRun] = useState<RunDetail | null>(null);
@@ -30,36 +31,59 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
   const [stockNames, setStockNames] = useState<Record<string, string>>({});
   const [selectedReason, setSelectedReason] = useState<{ code: string; name: string; reason: string } | null>(null);
+  const [runId, setRunId] = useState<string | null>(null);
+
+  const fetchRun = useCallback(async (id: string, currentStockNames: Record<string, string>) => {
+    try {
+      const res = await fetch(`/api/strategy-runs/${id}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setRun(data);
+
+      // Fetch stock names if not already fetched
+      const codes = data.results?.map((r: RunResult) => r.stockCode) || [];
+      const newNames = { ...currentStockNames };
+      await Promise.all(
+        codes.map(async (code: string) => {
+          if (!newNames[code]) {
+            try {
+              const r = await fetch(`/api/stocks/${code}`);
+              if (r.ok) {
+                const info = await r.json();
+                newNames[code] = info.name || code;
+              }
+            } catch {}
+          }
+        })
+      );
+      setStockNames(newNames);
+    } catch (err) {
+      console.error("Failed to fetch run:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    params.then(async ({ id }: { id: string }) => {
+    params.then(({ id }) => {
+      setRunId(id);
       setLoading(true);
-      try {
-        const res = await fetch(`/api/strategy-runs/${id}`);
-        const data = await res.json();
-        setRun(data);
-
-        const codes = data.results?.map((r: RunResult) => r.stockCode) || [];
-        const names: Record<string, string> = {};
-        await Promise.all(
-          codes.map(async (code: string) => {
-            if (!names[code]) {
-              try {
-                const r = await fetch(`/api/stocks/${code}`);
-                if (r.ok) {
-                  const info = await r.json();
-                  names[code] = info.name || code;
-                }
-              } catch {}
-            }
-          })
-        );
-        setStockNames(names);
-      } finally {
-        setLoading(false);
-      }
+      setStockNames({});
+      fetchRun(id, {});
     });
-  }, [params]);
+  }, [params, fetchRun]);
+
+  // Poll for updates when status is running
+  useEffect(() => {
+    if (!runId || !run) return;
+    if (run.status !== "running") return;
+
+    const interval = setInterval(() => {
+      fetchRun(runId, stockNames);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [runId, run, fetchRun, stockNames]);
 
   if (loading) {
     return (
@@ -86,15 +110,21 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
   }
 
   const stockCodes = JSON.parse(run.stockCodes) as string[];
-  const compliantCount = run.results.filter((r) => r.result === "符合").length;
-  const nonCompliantCount = run.results.filter((r) => r.result === "不符合").length;
-  const errorCount = run.results.filter((r) => r.result === "错误").length;
+  const getStatus = (r: RunResult) => r.status || "waiting";
+  const compliantCount = run.results.filter((r) => getStatus(r) === "compliant").length;
+  const nonCompliantCount = run.results.filter((r) => getStatus(r) === "non-compliant").length;
+  const errorCount = run.results.filter((r) => getStatus(r) === "error").length;
+  const waitingCount = run.results.filter((r) => ["waiting", ""].includes(getStatus(r)) || !r.status).length;
+  const runningCount = run.results.filter((r) => getStatus(r) === "running").length;
 
   const filteredResults = run.results.filter((r) => {
+    const status = getStatus(r);
     if (filterTab === "all") return true;
-    if (filterTab === "compliant") return r.result === "符合";
-    if (filterTab === "non-compliant") return r.result === "不符合";
-    if (filterTab === "error") return r.result === "错误";
+    if (filterTab === "compliant") return status === "compliant";
+    if (filterTab === "non-compliant") return status === "non-compliant";
+    if (filterTab === "error") return status === "error";
+    if (filterTab === "waiting") return status === "waiting" || status === "" || !r.status;
+    if (filterTab === "running") return status === "running";
     return true;
   });
 
@@ -120,6 +150,30 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
     );
   };
 
+  const getResultBadge = (r: RunResult) => {
+    const status = r.status || "waiting";
+    if (status === "waiting") {
+      return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">等待中</span>;
+    }
+    if (status === "running") {
+      return <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">运行中</span>;
+    }
+    const result = r.result || "";
+    return (
+      <span
+        className={`text-xs px-2 py-0.5 rounded-full ${
+          result === "符合"
+            ? "bg-green-500/20 text-green-400"
+            : result === "不符合"
+            ? "bg-yellow-500/20 text-yellow-400"
+            : "bg-red-500/20 text-red-400"
+        }`}
+      >
+        {result}
+      </span>
+    );
+  };
+
   return (
     <div className="h-[calc(100dvh-52px)] flex flex-col bg-[var(--background)] overflow-hidden animate-page-enter">
       {/* Header */}
@@ -141,6 +195,9 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
           </div>
           <div className="flex items-center gap-3">
             {getStatusBadge(run.status)}
+            {run.status === "running" && (
+              <span className="text-xs text-[var(--text-muted)] animate-pulse">自动刷新中</span>
+            )}
           </div>
         </div>
       </div>
@@ -169,7 +226,7 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
 
       {/* Summary tabs */}
       <div className="shrink-0 px-4 py-2">
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           <button
             onClick={() => setFilterTab("all")}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
@@ -179,6 +236,26 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
             }`}
           >
             全部 ({run.results.length})
+          </button>
+          <button
+            onClick={() => setFilterTab("waiting")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              filterTab === "waiting"
+                ? "bg-gray-500/20 text-gray-400"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
+            }`}
+          >
+            等待中 ({waitingCount})
+          </button>
+          <button
+            onClick={() => setFilterTab("running")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              filterTab === "running"
+                ? "bg-blue-500/20 text-blue-400"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
+            }`}
+          >
+            运行中 ({runningCount})
           </button>
           <button
             onClick={() => setFilterTab("compliant")}
@@ -222,7 +299,7 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
                 <tr className="border-b border-[var(--border)]">
                   <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">股票代码</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">股票名称</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">结果</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">状态</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">操作</th>
                 </tr>
               </thead>
@@ -234,27 +311,15 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
                     </td>
                   </tr>
                 ) : (
-                  filteredResults.map((r, i) => (
-                    <tr key={i} className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] transition-colors">
+                  filteredResults.map((r) => (
+                    <tr key={r.id} className="border-b border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] transition-colors">
                       <td className="px-4 py-3 font-mono text-[var(--text-primary)]">{r.stockCode}</td>
                       <td className="px-4 py-3 text-[var(--text-secondary)]">{stockNames[r.stockCode] || "-"}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
-                            r.result === "符合"
-                              ? "bg-green-500/20 text-green-400"
-                              : r.result === "不符合"
-                              ? "bg-yellow-500/20 text-yellow-400"
-                              : "bg-red-500/20 text-red-400"
-                          }`}
-                        >
-                          {r.result}
-                        </span>
-                      </td>
+                      <td className="px-4 py-3">{getResultBadge(r)}</td>
                       <td className="px-4 py-3">
                         {r.reason ? (
                           <button
-                            onClick={() => setSelectedReason({ code: r.stockCode, name: stockNames[r.stockCode] || r.stockCode, reason: r.reason })}
+                            onClick={() => { const reason = r.reason; if (reason) setSelectedReason({ code: r.stockCode, name: stockNames[r.stockCode] || r.stockCode, reason }); }}
                             className="text-xs text-[var(--accent)] hover:underline"
                           >
                             查看原因

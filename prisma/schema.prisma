@@ -268,7 +268,8 @@ model StrategyRunResult {
   id          String   @id @default(cuid())
   runId       String
   stockCode   String
-  result      String
+  status      String   @default("waiting") // waiting | running | compliant | non-compliant | error
+  result      String?
   reason      String?
   rawResponse String?
   executedAt  DateTime @default(now())
@@ -276,4 +277,5 @@ model StrategyRunResult {
   run         StrategyRun @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([runId])
+  @@index([status])
 }

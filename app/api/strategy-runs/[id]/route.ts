@@ -10,7 +10,7 @@ export async function GET(
     where: { id },
     include: {
       strategy: { include: { prompt: true } },
-      results: { orderBy: { executedAt: "asc" } },
+      results: { orderBy: { stockCode: "asc" } },
     },
   });
 
