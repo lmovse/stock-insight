@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { addAILog } from "@/lib/aiLog";
 
 const BATCH_SIZE = 10;
 
@@ -20,7 +21,7 @@ function buildPromptMessages(promptTemplate: string, stockCode: string, dateRang
     { role: "system", content: userContent },
     {
       role: "user",
-      content: `股票代码: ${stockCode}\n日期区间: ${dateRange}\nK线数据:\n${klineData}`,
+      content: `股票代码: ${stockCode}\n日期区间: ${dateRange}`,
     },
   ];
 }
@@ -61,17 +62,17 @@ function parseAIResponse(content: string) {
   if (match) {
     return {
       result: match[1] === "符合" ? "compliant" : match[1] === "不符合" ? "non-compliant" : "error",
-      reason: reasonMatch ? reasonMatch[1].trim() : content.slice(0, 200),
+      reason: reasonMatch ? reasonMatch[1].trim() : content,
     };
   }
 
   if (content.includes("符合") && !content.includes("不符合")) {
-    return { result: "compliant", reason: content.slice(0, 200) };
+    return { result: "compliant", reason: content };
   }
   if (content.includes("不符合")) {
-    return { result: "non-compliant", reason: content.slice(0, 200) };
+    return { result: "non-compliant", reason: content };
   }
-  return { result: "error", reason: content.slice(0, 200) };
+  return { result: "error", reason: content };
 }
 
 function codeToTsCode(code: string) {
@@ -128,6 +129,14 @@ async function processStock(runId: string, stockCode: string, startDate: string,
 
     const aiResponse = await callAI(messages, aiOptions);
     const parsed = parseAIResponse(aiResponse.content);
+
+    // Log AI request and response
+    addAILog({
+      runId,
+      stockCode,
+      messages,
+      response: aiResponse.content,
+    });
 
     await prisma.strategyRunResult.updateMany({
       where: { runId, stockCode },
