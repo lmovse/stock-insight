@@ -56,10 +56,10 @@ export default function StockConfigOperateModal({ purpose, purposeLabels, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-dialog-enter">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 animate-dialog-enter">
       <div
-        className="rounded-xl shadow-lg border overflow-hidden w-full max-w-md"
-        style={{ background: "var(--surface-solid)", borderColor: "var(--border)" }}
+        className="rounded-t-2xl sm:rounded-xl shadow-lg border overflow-hidden w-full sm:max-w-md"
+        style={{ background: "var(--surface-solid)", borderColor: "var(--border)", maxHeight: "90dvh" }}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">
@@ -78,7 +78,7 @@ export default function StockConfigOperateModal({ purpose, purposeLabels, onClos
             ref={textareaRef}
             value={codes}
             onChange={(e) => setCodes(e.target.value)}
-            placeholder="输入股票代码，每行一个，如：&#10;600000.SH&#10;000001.SZ"
+            placeholder="输入股票代码，每行一个，如：&#10;600000&#10;000001"
             rows={6}
             disabled={loading}
             className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none font-mono"
@@ -88,18 +88,18 @@ export default function StockConfigOperateModal({ purpose, purposeLabels, onClos
           )}
         </div>
 
-        <div className="flex gap-2 px-4 pb-4">
+        <div className="flex gap-2 px-4 pb-4 sm:pb-4">
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-1 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 pill-active"
+            className="flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 pill-active"
           >
             {loading ? "添加中..." : "添加"}
           </button>
           <button
             onClick={onClose}
             disabled={loading}
-            className="flex-1 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 pill-inactive"
+            className="flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 pill-inactive"
           >
             取消
           </button>

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+function codeToTsCode(code: string): string {
+  if (code.includes(".")) return code;
+  const c = code.startsWith("0") || code.startsWith("3") ? "SZ" : code.startsWith("4") || code.startsWith("8") ? "BJ" : "SH";
+  return `${code}.${c}`;
+}
+
 // GET /api/config/stocks?purpose=FIFTEEN_MIN
 export async function GET(req: NextRequest) {
   try {
@@ -51,13 +57,14 @@ export async function POST(req: NextRequest) {
 
   // upsert: create if not exists (does not update existing records)
   await Promise.all(
-    codes.map((code: string) =>
-      prisma.stockConfig.upsert({
-        where: { stockCode_purpose: { stockCode: code.trim(), purpose } },
+    codes.map((code: string) => {
+      const tsCode = codeToTsCode(code.trim());
+      return prisma.stockConfig.upsert({
+        where: { stockCode_purpose: { stockCode: tsCode, purpose } },
         update: {},
-        create: { stockCode: code.trim(), purpose, enabled: true },
-      })
-    )
+        create: { stockCode: tsCode, purpose, enabled: true },
+      });
+    })
   );
 
   return NextResponse.json({ success: true, count: codes.length });
