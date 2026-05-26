@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface RunResult {
   id: string;
@@ -399,7 +400,7 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               <div className="text-sm text-[var(--text-secondary)] leading-relaxed prose max-w-none">
-                <ReactMarkdown>{selectedReason.reason}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedReason.reason}</ReactMarkdown>
               </div>
             </div>
           </div>
