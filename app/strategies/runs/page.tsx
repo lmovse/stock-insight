@@ -93,7 +93,7 @@ export default function StrategyRunsPage() {
           </div>
           <Link
             href="/strategies"
-            className="px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="px-3 py-1.5 text-sm rounded-lg pill-active text-center"
           >
             返回策略
           </Link>
@@ -128,7 +128,8 @@ export default function StrategyRunsPage() {
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-        <div className="glass-card rounded-xl flex-1 overflow-hidden flex flex-col">
+        {/* Desktop: Table view */}
+        <div className="hidden md:block glass-card rounded-xl flex-1 overflow-hidden flex flex-col">
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10" style={{ background: 'var(--surface-solid)' }}>
@@ -197,6 +198,69 @@ export default function StrategyRunsPage() {
             <div className="shrink-0 flex items-center justify-between px-4 py-3 border-t border-[var(--border)]">
               <span className="text-xs text-[var(--text-muted)]">
                 第 {page + 1} / {totalPages} 页，共 {total} 条
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  上一页
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  下一页
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile: Card view */}
+        <div className="md:hidden flex-1 overflow-y-auto space-y-3">
+          {loading ? (
+            <div className="flex items-center justify-center py-12 gap-2">
+              <div className="w-5 h-5 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+              <span className="text-sm text-[var(--text-muted)]">加载中...</span>
+            </div>
+          ) : runs.length === 0 ? (
+            <div className="text-center py-12">
+              <span className="text-sm text-[var(--text-muted)]">暂无运行记录</span>
+            </div>
+          ) : (
+            runs.map((run) => {
+              const stockCodes = JSON.parse(run.stockCodes) as string[];
+              return (
+                <div key={run.id} className="glass-card rounded-xl p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-[var(--text-primary)] truncate">{run.strategy.name}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">{new Date(run.createdAt).toLocaleString()}</p>
+                    </div>
+                    {getStatusBadge(run.status)}
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
+                    <span>股票数量: <span className="text-[var(--text-primary)]">{stockCodes.length} 支</span></span>
+                    <span>日期: <span className="text-[var(--text-primary)]">{run.startDate} ~ {run.endDate}</span></span>
+                  </div>
+                  <Link
+                    href={`/strategies/runs/${run.id}`}
+                    className="block text-center text-xs text-[var(--accent)] hover:underline py-1.5 border border-[var(--border)] rounded-lg hover:border-[var(--accent)] transition-colors"
+                  >
+                    查看详情
+                  </Link>
+                </div>
+              );
+            })
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2 pb-4">
+              <span className="text-xs text-[var(--text-muted)]">
+                第 {page + 1} / {totalPages} 页
               </span>
               <div className="flex items-center gap-2">
                 <button

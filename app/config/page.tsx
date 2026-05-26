@@ -17,28 +17,30 @@ export default function ConfigPage() {
         <p className="text-xs text-[var(--text-muted)] mt-1">管理股票分类配置</p>
       </div>
 
-      {/* Tab Bar */}
-      <div className="flex items-center gap-1 mb-4 shrink-0">
-        <button
-          onClick={() => setActiveTab("stocks")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeTab === "stocks"
-              ? "bg-accent/20 text-[var(--accent)]"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
-          }`}
-        >
-          股票配置
-        </button>
-        <button
-          onClick={() => setActiveTab("categories")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeTab === "categories"
-              ? "bg-accent/20 text-[var(--accent)]"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
-          }`}
-        >
-          分类管理
-        </button>
+      {/* Segmented Control */}
+      <div className="mb-4 shrink-0">
+        <div className="inline-flex items-center p-1 rounded-xl bg-[var(--surface-solid)] border border-[var(--border)]">
+          <button
+            onClick={() => setActiveTab("stocks")}
+            className={`px-5 py-2 text-sm font-medium rounded-lg transition-all ${
+              activeTab === "stocks"
+                ? "bg-[var(--accent)] text-white shadow-sm"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            股票配置
+          </button>
+          <button
+            onClick={() => setActiveTab("categories")}
+            className={`px-5 py-2 text-sm font-medium rounded-lg transition-all ${
+              activeTab === "categories"
+                ? "bg-[var(--accent)] text-white shadow-sm"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            分类管理
+          </button>
+        </div>
       </div>
 
       {/* Content */}

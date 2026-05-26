@@ -108,27 +108,28 @@ export default function StockConfigTabs() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Tab Bar */}
-      <div className="flex items-center gap-1 px-4 pt-4 shrink-0">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveTab(cat.code)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === cat.code
-                ? "bg-accent/20 text-[var(--accent)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
-            }`}
-          >
-            {cat.name}
-          </button>
-        ))}
-        <div className="flex-1" />
+      {/* Segmented Control for Categories */}
+      <div className="flex items-center justify-between px-4 pt-4 shrink-0">
+        <div className="inline-flex items-center p-1 rounded-xl bg-[var(--surface-solid)] border border-[var(--border)]">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveTab(cat.code)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                activeTab === cat.code
+                  ? "bg-[var(--accent)] text-white shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 text-sm font-semibold rounded-lg pill-active transition-colors self-center"
+          className="px-4 py-1.5 text-sm font-semibold rounded-lg pill-active"
         >
-          添加股票
+          + 添加股票
         </button>
       </div>
 
