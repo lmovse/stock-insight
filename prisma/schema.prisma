@@ -256,6 +256,8 @@ model ScriptStrategy {
   updatedAt   DateTime @updatedAt
 
   runs        ScriptRun[]
+
+  @@index([userId])
 }
 
 model ScriptRun {
