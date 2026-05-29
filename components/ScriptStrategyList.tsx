@@ -154,20 +154,6 @@ export default function ScriptStrategyList() {
     }
   }, [currentRun?.result]);
 
-  // Memoize markdown table to avoid re-creating on every render
-  const signalsMarkdown = useMemo(() => {
-    if (!parsedResult?.data || parsedResult.data.length === 0) return null;
-    const items = parsedResult.data.slice(0, 50);
-    const rows = items.map((item: Record<string, unknown>) =>
-      `| ${item.tsCode} | ${item.minLow} | +${Number(item.difChange).toFixed(4)} | +${Number(item.kChange).toFixed(2)} | ${item.currentPrice} |`
-    );
-    return [
-      "| 代码 | 最低价 | dif变化 | k变化 | 当前价 |",
-      "| --- | --- | --- | --- | --- |",
-      ...rows
-    ].join("\n");
-  }, [parsedResult?.data]);
-
   // Memoize AI analysis markdown
   const analysisMarkdown = useMemo(() => {
     if (!currentRun?.analysis) return null;
@@ -372,11 +358,32 @@ export default function ScriptStrategyList() {
               {currentRun.error}
             </div>
           )}
-          {signalsMarkdown && (
+          {parsedResult?.data && parsedResult.data.length > 0 && (
             <div className="mb-3">
-              <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">信号列表 ({parsedResult?.count} 个)</h4>
-              <div className="overflow-x-auto max-h-64 text-xs">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{signalsMarkdown}</ReactMarkdown>
+              <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">信号列表 ({parsedResult.count} 个)</h4>
+              <div className="overflow-x-auto max-h-64">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-[var(--surface-solid)]">
+                    <tr>
+                      <th className="text-left px-2 py-1 text-[var(--text-muted)] font-medium">代码</th>
+                      <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">最低价</th>
+                      <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">dif变化</th>
+                      <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">k变化</th>
+                      <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">当前价</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {parsedResult.data.slice(0, 50).map((item: Record<string, unknown>, idx: number) => (
+                      <tr key={idx}>
+                        <td className="px-2 py-1 text-[var(--text-primary)]">{String(item.tsCode)}</td>
+                        <td className="text-right px-2 py-1 text-[var(--text-secondary)]">{String(item.minLow)}</td>
+                        <td className="text-right px-2 py-1 text-green-400">+{Number(item.difChange).toFixed(4)}</td>
+                        <td className="text-right px-2 py-1 text-green-400">+{Number(item.kChange).toFixed(2)}</td>
+                        <td className="text-right px-2 py-1 text-[var(--text-primary)]">{String(item.currentPrice)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
