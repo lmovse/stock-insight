@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "策略不存在" }, { status: 404 });
   }
 
-  if (existing.userId !== GLOBAL_USER_ID && existing.userId !== user.id) {
+  if (existing.userId !== user.id) {
     return NextResponse.json({ error: "无权修改" }, { status: 403 });
   }
 
@@ -62,7 +62,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "策略不存在" }, { status: 404 });
   }
 
-  if (existing.userId !== GLOBAL_USER_ID && existing.userId !== user.id) {
+  if (existing.userId !== user.id) {
     return NextResponse.json({ error: "无权删除" }, { status: 403 });
   }
 
