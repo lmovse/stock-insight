@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ScriptStrategy {
   id: string;
@@ -28,6 +30,7 @@ export default function ScriptStrategyList() {
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [dateError, setDateError] = useState<string>("");
+  const [showRawJson, setShowRawJson] = useState<boolean>(false);
   const [running, setRunning] = useState(false);
   const [currentRun, setCurrentRun] = useState<ScriptRun | null>(null);
   const [history, setHistory] = useState<ScriptRun[]>([]);
@@ -231,14 +234,24 @@ export default function ScriptStrategyList() {
           )}
           {currentRun.result && (
             <div className="mb-3">
-              <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-64">
-                {currentRun.result}
-              </pre>
+              <button
+                onClick={() => setShowRawJson(!showRawJson)}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] mb-2 flex items-center gap-1"
+              >
+                {showRawJson ? "▼" : "▶"} 原始 JSON
+              </button>
+              {showRawJson && (
+                <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-64">
+                  {currentRun.result}
+                </pre>
+              )}
             </div>
           )}
           {currentRun.analysis && (
-            <div className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              {currentRun.analysis}
+            <div className="text-xs text-[var(--text-secondary)] leading-relaxed prose prose-sm max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {currentRun.analysis}
+              </ReactMarkdown>
             </div>
           )}
         </div>
