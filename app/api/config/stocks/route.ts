@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
       purpose,
       OR: [
         { userId: GLOBAL_USER_ID },
+        { userId: null },
         { userId: currentUserId },
       ]
     },
