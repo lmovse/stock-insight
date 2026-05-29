@@ -50,20 +50,34 @@ def aggregate_to_30min(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values("tradeTime").reset_index(drop=True)
     n = len(df)
     result_list = []
-    for i in range(0, n - 1, 2):
+    for i in range(0, n, 2):
         row1 = df.iloc[i]
-        row2 = df.iloc[i + 1]
-        result_list.append({
-            "tradeDate": row1["tradeDate"],
-            "tradeTime": row1["tradeTime"],
-            "tsCode": row1["tsCode"],
-            "open": row1["open"],
-            "high": max(row1["high"], row2["high"]),
-            "low": min(row1["low"], row2["low"]),
-            "close": row2["close"],
-            "volume": row1["volume"] + row2["volume"],
-            "amount": row1["amount"] + row2["amount"],
-        })
+        if i + 1 < n:
+            row2 = df.iloc[i + 1]
+            result_list.append({
+                "tradeDate": row1["tradeDate"],
+                "tradeTime": row1["tradeTime"],
+                "tsCode": row1["tsCode"],
+                "open": row1["open"],
+                "high": max(row1["high"], row2["high"]),
+                "low": min(row1["low"], row2["low"]),
+                "close": row2["close"],
+                "volume": row1["volume"] + row2["volume"],
+                "amount": row1["amount"] + row2["amount"],
+            })
+        else:
+            # Odd case: last single candle carried forward as-is
+            result_list.append({
+                "tradeDate": row1["tradeDate"],
+                "tradeTime": row1["tradeTime"],
+                "tsCode": row1["tsCode"],
+                "open": row1["open"],
+                "high": row1["high"],
+                "low": row1["low"],
+                "close": row1["close"],
+                "volume": row1["volume"],
+                "amount": row1["amount"],
+            })
     return pd.DataFrame(result_list)
 
 
@@ -153,7 +167,7 @@ def main():
     parser.add_argument("--date", type=str, required=True, help="日期，如 20260522")
     args = parser.parse_args()
 
-    today = args.date if args.date else datetime.now().strftime("%Y%m%d")
+    today = args.date
     print(f"检测日期: {today}", file=sys.stderr)
 
     codes = get_stock_codes()
@@ -181,8 +195,8 @@ def main():
             if signal:
                 signals.append(signal)
 
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"处理股票 {code} 时出错: {e}", file=sys.stderr)
 
         if (i + 1) % 50 == 0:
             print(f"已处理 {i+1}/{len(codes)}", file=sys.stderr)
