@@ -30,6 +30,23 @@ interface HistoryCardProps {
   resultData: { count?: number; summary?: string; date?: string } | null;
 }
 
+interface SignalItem {
+  tsCode: string;
+  minLow: number;
+  minLowTime: string;
+  difChange: number;
+  kChange: number;
+  currentPrice: number;
+}
+
+interface ParsedSignalResult {
+  success: boolean;
+  date: string;
+  count: number;
+  data: SignalItem[];
+  summary: string;
+}
+
 function HistoryCard({ run, resultData }: HistoryCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
@@ -40,6 +57,16 @@ function HistoryCard({ run, resultData }: HistoryCardProps) {
     paramsObj = run.params ? JSON.parse(run.params) : {};
   } catch {
     // ignore
+  }
+
+  // Parse result JSON
+  let parsedResultData: ParsedSignalResult | null = null;
+  if (run.result) {
+    try {
+      parsedResultData = JSON.parse(run.result) as ParsedSignalResult;
+    } catch {
+      // ignore
+    }
   }
 
   return (
@@ -67,11 +94,11 @@ function HistoryCard({ run, resultData }: HistoryCardProps) {
                 {resultData.count} 个信号
               </span>
             )}
-            {paramsObj.date && (
+            {paramsObj.date ? (
               <span className="text-xs text-[var(--text-muted)]">
-                日期: {paramsObj.date}
+                日期: {String(paramsObj.date)}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -91,39 +118,67 @@ function HistoryCard({ run, resultData }: HistoryCardProps) {
             </div>
           )}
 
-          {run.analysis && (
-            <div className="mb-3">
-              <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">AI 分析</h4>
-              <div className="text-xs text-[var(--text-secondary)] prose prose-sm max-w-none [&_hr]:border-[var(--border)] [&_hr]:opacity-50">
-                {(() => {
-                  try {
-                    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.analysis}</ReactMarkdown>;
-                  } catch {
-                    return <pre>{run.analysis}</pre>;
-                  }
-                })()}
-              </div>
-            </div>
-          )}
+          {parsedResultData?.data && parsedResultData.data.length > 0 ? (
+                <div className="mb-3">
+                  <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">信号列表 ({parsedResultData.count} 个)</h4>
+                  <div className="overflow-x-auto max-h-48">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-[var(--surface-solid)]">
+                        <tr>
+                          <th className="text-left px-2 py-1 text-[var(--text-muted)] font-medium">代码</th>
+                          <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">最低价</th>
+                          <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">dif变化</th>
+                          <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">k变化</th>
+                          <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">当前价</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border)]">
+                        {parsedResultData.data.slice(0, 50).map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="px-2 py-1 text-[var(--text-primary)]">{item.tsCode}</td>
+                            <td className="text-right px-2 py-1 text-[var(--text-secondary)]">{item.minLow}</td>
+                            <td className="text-right px-2 py-1 text-green-400">+{item.difChange.toFixed(4)}</td>
+                            <td className="text-right px-2 py-1 text-green-400">+{item.kChange.toFixed(2)}</td>
+                            <td className="text-right px-2 py-1 text-[var(--text-primary)]">{item.currentPrice}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : run.result ? (
+                <div className="mb-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowRawJson(!showRawJson);
+                    }}
+                    className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] flex items-center gap-1"
+                  >
+                    {showRawJson ? "▼" : "▶"} 原始 JSON
+                  </button>
+                  {showRawJson && (
+                    <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-48 mt-2">
+                      {run.result}
+                    </pre>
+                  )}
+                </div>
+              ) : null}
 
-          {run.result && (
-            <div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowRawJson(!showRawJson);
-                }}
-                className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] mb-2 flex items-center gap-1"
-              >
-                {showRawJson ? "▼" : "▶"} 原始 JSON
-              </button>
-              {showRawJson && (
-                <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-64">
-                  {run.result}
-                </pre>
-              )}
-            </div>
-          )}
+            {run.analysis && (
+              <div className="mb-3">
+                <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">AI 分析</h4>
+                <div className="text-xs text-[var(--text-secondary)] prose prose-sm max-w-none [&_hr]:border-[var(--border)] [&_hr]:opacity-50">
+                  {(() => {
+                    try {
+                      return <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.analysis}</ReactMarkdown>;
+                    } catch {
+                      return <pre>{run.analysis}</pre>;
+                    }
+                  })()}
+                </div>
+              </div>
+            )}
         </div>
       )}
     </div>
