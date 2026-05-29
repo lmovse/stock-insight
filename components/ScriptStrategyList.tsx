@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+// import ReactMarkdown from "react-markdown";
+// import remarkGfm from "remark-gfm";
 
 interface ScriptStrategy {
   id: string;
@@ -94,15 +94,7 @@ function HistoryCard({ run, resultData }: HistoryCardProps) {
           {run.analysis && (
             <div className="mb-3">
               <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">AI 分析</h4>
-              <div className="text-xs text-[var(--text-secondary)] prose prose-sm max-w-none [&_hr]:border-[var(--border)] [&_hr]:opacity-50">
-                {(() => {
-                  try {
-                    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.analysis}</ReactMarkdown>;
-                  } catch {
-                    return <pre>{run.analysis}</pre>;
-                  }
-                })()}
-              </div>
+              <pre className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap">{run.analysis}</pre>
             </div>
           )}
 
@@ -397,15 +389,7 @@ export default function ScriptStrategyList() {
           {currentRun.analysis && (
             <div>
               <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">AI 分析</h4>
-              <div className="text-xs text-[var(--text-secondary)] leading-relaxed prose prose-sm max-w-none [&_hr]:border-[var(--border)] [&_hr]:opacity-50">
-                {(() => {
-                  try {
-                    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentRun.analysis}</ReactMarkdown>;
-                  } catch {
-                    return <pre>{currentRun.analysis}</pre>;
-                  }
-                })()}
-              </div>
+              <pre className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap">{currentRun.analysis}</pre>
             </div>
           )}
         </div>
