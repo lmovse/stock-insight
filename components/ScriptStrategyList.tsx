@@ -44,13 +44,14 @@ export default function ScriptStrategyList() {
     selectedStrategyIdRef.current = selectedStrategyId;
   }, [selectedStrategyId]);
 
-  // Clear polling interval when selectedStrategyId changes
+  // Clear polling interval when selectedStrategyId changes or component unmounts
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      pollingRef.current = false;
     };
   }, [selectedStrategyId]);
 
@@ -248,10 +249,14 @@ export default function ScriptStrategyList() {
             </div>
           )}
           {currentRun.analysis && (
-            <div className="text-xs text-[var(--text-secondary)] leading-relaxed prose prose-sm max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {currentRun.analysis}
-              </ReactMarkdown>
+            <div className="text-xs text-[var(--text-secondary)] leading-relaxed prose prose-sm max-w-none [&_hr]:border-[var(--border)] [&_hr]:opacity-50">
+              {(() => {
+                try {
+                  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentRun.analysis}</ReactMarkdown>;
+                } catch {
+                  return <pre>{currentRun.analysis}</pre>;
+                }
+              })()}
             </div>
           )}
         </div>
