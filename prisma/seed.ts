@@ -354,6 +354,24 @@ async function main() {
     console.log(`Created strategy: ${strategy.name} (${strategy.id})`);
   }
 
+  // Add default script strategy
+  const scriptStrategy = await prisma.scriptStrategy.findFirst({
+    where: { name: "30分钟底背离信号" },
+  });
+  if (!scriptStrategy) {
+    const created = await prisma.scriptStrategy.create({
+      data: {
+        name: "30分钟底背离信号",
+        description: "检测30分钟K线创近期新低后DIF和KD同时上升的股票",
+        scriptPath: "screen_today_signals.py",
+        params: JSON.stringify({ days: 10 }),
+      },
+    });
+    console.log(`Created script strategy: ${created.name} (${created.id})`);
+  } else {
+    console.log(`Script strategy "${scriptStrategy.name}" already exists`);
+  }
+
   console.log("\nAll done!");
 }
 
