@@ -5,6 +5,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import StrategyRunner from "@/components/StrategyRunner";
+import ScriptStrategyList from "@/components/ScriptStrategyList";
 
 interface Strategy {
   id: string;
@@ -20,6 +21,7 @@ type DialogContent =
   | null;
 
 export default function StrategiesPage() {
+  const [activeTab, setActiveTab] = useState<"ai" | "script">("ai");
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [newName, setNewName] = useState("");
@@ -141,61 +143,86 @@ export default function StrategiesPage() {
         </div>
       </div>
 
-      {/* 新建表单 */}
-      {showNewForm && (
-        <div className="glass-card rounded-xl p-5 shrink-0 form-slide-enter">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略名称</label>
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="输入策略名称"
-                className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">提示词</label>
-              <select
-                value={newPromptId}
-                onChange={(e) => setNewPromptId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)]"
-              >
-                {prompts.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="mb-3">
-            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略描述 <span className="text-[var(--text-muted)] opacity-60">（可选）</span></label>
-            <input
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="简要描述策略逻辑"
-              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-            />
-          </div>
-          <div className="mb-3">
-            <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略条件 <span className="text-[var(--text-muted)] opacity-60">（支持 Markdown）</span></label>
-            <textarea
-              value={newCriteria}
-              onChange={(e) => setNewCriteria(e.target.value)}
-              placeholder="描述选股条件，如：&#10;1. 均线多头排列（MA5 > MA10 > MA20）&#10;2. 成交量放大至5日均量的1.5倍以上"
-              rows={6}
-              className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none leading-relaxed"
-            />
-          </div>
-          <div className="flex gap-2">
-            <button onClick={handleCreate} className="px-5 py-2 rounded-lg text-sm font-semibold pill-active">创建</button>
-            <button onClick={() => setShowNewForm(false)} className="px-4 py-2 rounded-lg text-sm border border-[var(--border)] text-[var(--text-secondary)] hover:bg-white/5 transition-colors">取消</button>
-          </div>
-        </div>
-      )}
+      {/* Tab Switching */}
+      <div className="flex gap-2 mb-4 shrink-0">
+        <button
+          onClick={() => setActiveTab("ai")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "ai" ? "bg-[var(--accent)] text-black" : "bg-[var(--surface-solid)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+          }`}
+        >
+          AI 策略
+        </button>
+        <button
+          onClick={() => setActiveTab("script")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "script" ? "bg-[var(--accent)] text-black" : "bg-[var(--surface-solid)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+          }`}
+        >
+          脚本策略
+        </button>
+      </div>
 
-      {/* 策略列表 */}
-      <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
-        {strategies.map((s) => (
+      {activeTab === "script" ? (
+        <div className="flex-1 overflow-hidden">
+          <ScriptStrategyList />
+        </div>
+      ) : (
+        <>
+          {showNewForm && (
+            <div className="glass-card rounded-xl p-5 shrink-0 form-slide-enter">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略名称</label>
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="输入策略名称"
+                    className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">提示词</label>
+                  <select
+                    value={newPromptId}
+                    onChange={(e) => setNewPromptId(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)]"
+                  >
+                    {prompts.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略描述 <span className="text-[var(--text-muted)] opacity-60">（可选）</span></label>
+                <input
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder="简要描述策略逻辑"
+                  className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">策略条件 <span className="text-[var(--text-muted)] opacity-60">（支持 Markdown）</span></label>
+                <textarea
+                  value={newCriteria}
+                  onChange={(e) => setNewCriteria(e.target.value)}
+                  placeholder="描述选股条件，如：&#10;1. 均线多头排列（MA5 > MA10 > MA20）&#10;2. 成交量放大至5日均量的1.5倍以上"
+                  rows={6}
+                  className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none leading-relaxed"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleCreate} className="px-5 py-2 rounded-lg text-sm font-semibold pill-active">创建</button>
+                <button onClick={() => setShowNewForm(false)} className="px-4 py-2 rounded-lg text-sm border border-[var(--border)] text-[var(--text-secondary)] hover:bg-white/5 transition-colors">取消</button>
+              </div>
+            </div>
+          )}
+
+          {/* 策略列表 */}
+          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
+            {strategies.map((s) => (
           <div key={s.id} className={`glass-card rounded-xl p-4 transition-all duration-300 ${editingId === s.id ? 'border-[var(--accent)]' : ''}`}>
             {editingId === s.id ? (
               /* 编辑表单 */
@@ -289,6 +316,8 @@ export default function StrategiesPage() {
           </div>
         )}
       </div>
+        </>
+      )}
 
       {/* Dialog backdrop */}
       {dialog && (
