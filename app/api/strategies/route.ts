@@ -15,6 +15,7 @@ export async function GET() {
         { userId: currentUserId },
       ]
     },
+    include: { prompt: true },
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(strategies);
