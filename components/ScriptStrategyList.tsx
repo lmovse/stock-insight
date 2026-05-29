@@ -32,6 +32,7 @@ interface HistoryCardProps {
 
 function HistoryCard({ run, resultData }: HistoryCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [showRawJson, setShowRawJson] = useState(false);
 
   // Parse params for display
   let paramsObj: Record<string, unknown> = {};
@@ -110,15 +111,17 @@ function HistoryCard({ run, resultData }: HistoryCardProps) {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setExpanded(false);
+                  setShowRawJson(!showRawJson);
                 }}
                 className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] mb-2 flex items-center gap-1"
               >
-                收起原始数据
+                {showRawJson ? "▼" : "▶"} 原始 JSON
               </button>
-              <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-64">
-                {run.result}
-              </pre>
+              {showRawJson && (
+                <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-64">
+                  {run.result}
+                </pre>
+              )}
             </div>
           )}
         </div>
