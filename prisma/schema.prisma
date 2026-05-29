@@ -244,6 +244,35 @@ model Prompt {
   @@index([userId])
 }
 
+model ScriptStrategy {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  scriptPath  String
+  params      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  runs        ScriptRun[]
+}
+
+model ScriptRun {
+  id                String   @id @default(cuid())
+  scriptStrategyId  String
+  params            String
+  result            String?
+  analysis          String?
+  status            String   @default("pending") // pending | running | completed | failed
+  error             String?
+  createdAt         DateTime @default(now())
+  finishedAt        DateTime?
+
+  script            ScriptStrategy @relation(fields: [scriptStrategyId], references: [id], onDelete: Cascade)
+
+  @@index([scriptStrategyId])
+  @@index([status])
+}
+
 model StrategyRun {
   id          String   @id @default(cuid())
   userId      String?
