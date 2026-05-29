@@ -396,7 +396,7 @@ export default function ScriptStrategyList() {
 
       {/* Current Run Result */}
       {currentRun && (
-        <div className="glass-card rounded-xl p-4 shrink-0">
+        <div className="glass-card rounded-xl p-4 shrink-0 overflow-y-auto max-h-96">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm font-semibold text-[var(--text-primary)]">运行结果</span>
             <span className={`text-xs px-2 py-0.5 rounded-full ${
