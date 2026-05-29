@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const GLOBAL_USER_ID = "global";
+
 // PUT /api/config/categories/:id
 export async function PUT(
   req: NextRequest,
@@ -19,11 +21,22 @@ export async function PUT(
       return NextResponse.json({ error: "code and name required" }, { status: 400 });
     }
 
+    // 检查是否存在
+    const existing = await prisma.systemCategory.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    }
+
+    // 检查所有权
+    if (existing.userId !== user.id) {
+      return NextResponse.json({ error: "无权修改" }, { status: 403 });
+    }
+
     // 检查是否重复（排除自己）
-    const existing = await prisma.systemCategory.findFirst({
+    const duplicate = await prisma.systemCategory.findFirst({
       where: { code, id: { not: id } },
     });
-    if (existing) {
+    if (duplicate) {
       return NextResponse.json({ error: "Code already exists" }, { status: 400 });
     }
 
@@ -49,6 +62,17 @@ export async function DELETE(
 
   try {
     const { id } = await params;
+
+    // 检查是否存在
+    const existing = await prisma.systemCategory.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    }
+
+    // 检查所有权
+    if (existing.userId !== user.id) {
+      return NextResponse.json({ error: "无权删除" }, { status: 403 });
+    }
 
     await prisma.systemCategory.delete({
       where: { id },
