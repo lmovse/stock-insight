@@ -23,11 +23,15 @@ def get_stock_codes():
     return codes
 
 
-def get_15min_data(ts_code: str, days: int = 10) -> pd.DataFrame:
+def get_15min_data(ts_code: str, target_date: str, days: int = 10) -> pd.DataFrame:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    end_date = datetime.now().strftime("%Y%m%d")
-    start_date = (datetime.now() - timedelta(days=days)).strftime("%Y%m%d")
+    # 使用传入的日期作为结束日期，往前推 days 天作为开始日期
+    from datetime import datetime as dt
+    end_dt = dt.strptime(target_date, "%Y%m%d")
+    start_dt = end_dt - timedelta(days=days)
+    end_date = end_dt.strftime("%Y%m%d")
+    start_date = start_dt.strftime("%Y%m%d")
     cursor.execute("""
         SELECT tradeDate, tradeTime, tsCode, open, high, low, close, volume, amount
         FROM MinuteCandle
@@ -176,7 +180,7 @@ def main():
     signals = []
     for i, code in enumerate(codes):
         try:
-            df = get_15min_data(code, days=10)
+            df = get_15min_data(code, today, days=10)
             if df.empty or len(df) < 60:
                 continue
 
