@@ -25,7 +25,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // 创建运行记录
-  const runParams = JSON.stringify({ date, ...extraParams });
+  const defaultParams = strategy.params ? JSON.parse(strategy.params) : {};
+  const runParams = JSON.stringify({ ...defaultParams, date, ...extraParams });
   let run;
   try {
     run = await prisma.scriptRun.create({
