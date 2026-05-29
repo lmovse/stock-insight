@@ -77,6 +77,36 @@ export async function callAI(
   }
 }
 
+export async function analyzeScriptResult(
+  strategyName: string,
+  scriptResult: string,
+  options: AIOptions
+): Promise<string> {
+  const analysisPrompt = `你是一个专业的股票策略分析师。请分析以下脚本运行结果：
+
+## 策略名称
+${strategyName}
+
+## 原始结果
+${scriptResult}
+
+## 要求
+1. 总结策略表现
+2. 指出值得关注的信号
+3. 提示潜在风险
+4. 用 Markdown 格式输出
+
+请用中文回复。`;
+
+  const messages: AIMessage[] = [
+    { role: "system", content: analysisPrompt },
+    { role: "user", content: "请分析以上结果" },
+  ];
+
+  const response = await callAI(messages, options, undefined, 120000);
+  return response.content;
+}
+
 export function formatKLineData(
   data: Array<{ date: number; open: number; high: number; low: number; close: number; volume: number }>
 ): string {
