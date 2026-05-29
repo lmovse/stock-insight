@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -143,6 +143,16 @@ export default function ScriptStrategyList() {
   const pollingRef = useRef(false);
   const selectedStrategyIdRef = useRef(selectedStrategyId);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Memoize parsed result to avoid re-parsing on every render
+  const parsedResult = useMemo(() => {
+    if (!currentRun?.result) return null;
+    try {
+      return JSON.parse(currentRun.result);
+    } catch {
+      return null;
+    }
+  }, [currentRun?.result]);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -338,59 +348,52 @@ export default function ScriptStrategyList() {
               {currentRun.error}
             </div>
           )}
-          {currentRun.result && (() => {
-            let parsed: { data?: Array<Record<string, unknown>>; count?: number; date?: string } | null = null;
-            try {
-              parsed = JSON.parse(currentRun.result);
-            } catch { /* ignore */ }
-
-            return (
-              <div className="mb-3">
-                {/* Signals Table */}
-                {parsed?.data && parsed.data.length > 0 && (
-                  <div className="mb-3">
-                    <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">信号列表 ({parsed.count} 个)</h4>
-                    <div className="overflow-x-auto max-h-64">
-                      <table className="w-full text-xs">
-                        <thead className="sticky top-0 bg-[var(--surface-solid)]">
-                          <tr>
-                            <th className="text-left px-2 py-1 text-[var(--text-muted)] font-medium">代码</th>
-                            <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">最低价</th>
-                            <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">dif变化</th>
-                            <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">k变化</th>
-                            <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">当前价</th>
+          {currentRun.result && (
+            <div className="mb-3">
+              {/* Signals Table */}
+              {parsedResult?.data && parsedResult.data.length > 0 && (
+                <div className="mb-3">
+                  <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">信号列表 ({parsedResult.count} 个)</h4>
+                  <div className="overflow-x-auto max-h-64">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-[var(--surface-solid)]">
+                        <tr>
+                          <th className="text-left px-2 py-1 text-[var(--text-muted)] font-medium">代码</th>
+                          <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">最低价</th>
+                          <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">dif变化</th>
+                          <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">k变化</th>
+                          <th className="text-right px-2 py-1 text-[var(--text-muted)] font-medium">当前价</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border)]">
+                        {parsedResult.data.slice(0, 50).map((item: Record<string, unknown>, idx: number) => (
+                          <tr key={idx} className="hover:bg-[var(--surface-solid)]">
+                            <td className="px-2 py-1 text-[var(--text-primary)]">{String(item.tsCode)}</td>
+                            <td className="text-right px-2 py-1 text-[var(--text-secondary)]">{String(item.minLow)}</td>
+                            <td className="text-right px-2 py-1 text-green-400">+{Number(item.difChange).toFixed(4)}</td>
+                            <td className="text-right px-2 py-1 text-green-400">+{Number(item.kChange).toFixed(2)}</td>
+                            <td className="text-right px-2 py-1 text-[var(--text-primary)]">{String(item.currentPrice)}</td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[var(--border)]">
-                          {parsed.data.slice(0, 50).map((item, idx) => (
-                            <tr key={idx} className="hover:bg-[var(--surface-solid)]">
-                              <td className="px-2 py-1 text-[var(--text-primary)]">{item.tsCode}</td>
-                              <td className="text-right px-2 py-1 text-[var(--text-secondary)]">{item.minLow}</td>
-                              <td className="text-right px-2 py-1 text-green-400">+{Number(item.difChange).toFixed(4)}</td>
-                              <td className="text-right px-2 py-1 text-green-400">+{Number(item.kChange).toFixed(2)}</td>
-                              <td className="text-right px-2 py-1 text-[var(--text-primary)]">{item.currentPrice}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
+                </div>
+              )}
 
-                <button
-                  onClick={() => setShowRawJson(!showRawJson)}
-                  className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] mb-2 flex items-center gap-1"
-                >
-                  {showRawJson ? "▼" : "▶"} 原始 JSON
-                </button>
-                {showRawJson && (
-                  <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-64">
-                    {currentRun.result}
-                  </pre>
-                )}
-              </div>
-            );
-          })()}
+              <button
+                onClick={() => setShowRawJson(!showRawJson)}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] mb-2 flex items-center gap-1"
+              >
+                {showRawJson ? "▼" : "▶"} 原始 JSON
+              </button>
+              {showRawJson && (
+                <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-64">
+                  {currentRun.result}
+                </pre>
+              )}
+            </div>
+          )}
           {currentRun.analysis && (
             <div>
               <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">AI 分析</h4>
