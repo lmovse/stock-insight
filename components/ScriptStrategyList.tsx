@@ -25,6 +25,108 @@ interface ScriptRun {
   finishedAt: string | null;
 }
 
+interface HistoryCardProps {
+  run: ScriptRun;
+  resultData: { count?: number; summary?: string; date?: string } | null;
+}
+
+function HistoryCard({ run, resultData }: HistoryCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Parse params for display
+  let paramsObj: Record<string, unknown> = {};
+  try {
+    paramsObj = run.params ? JSON.parse(run.params) : {};
+  } catch {
+    // ignore
+  }
+
+  return (
+    <div className="glass-card rounded-xl p-4">
+      {/* Header - always visible */}
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-3">
+          <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
+            run.status === "completed" ? "bg-green-500/20 text-green-400" :
+            run.status === "failed" ? "bg-red-500/20 text-red-400" :
+            "bg-yellow-500/20 text-yellow-400"
+          }`}>
+            {run.status === "completed" ? "完成" :
+             run.status === "failed" ? "失败" : "运行中"}
+          </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <span className="text-xs text-[var(--text-primary)]">
+              {new Date(run.createdAt).toLocaleString()}
+            </span>
+            {resultData && (
+              <span className="text-xs text-[var(--accent)] font-medium">
+                {resultData.count} 个信号
+              </span>
+            )}
+            {paramsObj.date && (
+              <span className="text-xs text-[var(--text-muted)]">
+                日期: {paramsObj.date}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[var(--text-muted)]">
+            {run.finishedAt ? `耗时 ${Math.round((new Date(run.finishedAt).getTime() - new Date(run.createdAt).getTime()) / 1000)}s` : ""}
+          </span>
+          <span className="text-xs text-[var(--text-muted)]">{expanded ? "▲" : "▼"}</span>
+        </div>
+      </div>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="mt-3 pt-3 border-t border-[var(--border)]">
+          {run.error && (
+            <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 mb-3">
+              {run.error}
+            </div>
+          )}
+
+          {run.analysis && (
+            <div className="mb-3">
+              <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">AI 分析</h4>
+              <div className="text-xs text-[var(--text-secondary)] prose prose-sm max-w-none [&_hr]:border-[var(--border)] [&_hr]:opacity-50">
+                {(() => {
+                  try {
+                    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.analysis}</ReactMarkdown>;
+                  } catch {
+                    return <pre>{run.analysis}</pre>;
+                  }
+                })()}
+              </div>
+            </div>
+          )}
+
+          {run.result && (
+            <div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpanded(false);
+                }}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] mb-2 flex items-center gap-1"
+              >
+                收起原始数据
+              </button>
+              <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-lg overflow-x-auto max-h-64">
+                {run.result}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ScriptStrategyList() {
   const [strategies, setStrategies] = useState<ScriptStrategy[]>([]);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>("");
@@ -270,43 +372,20 @@ export default function ScriptStrategyList() {
             <p className="text-[var(--text-muted)]">暂无运行记录</p>
           </div>
         ) : (
-          history.map((run) => (
-            <div key={run.id} className="glass-card rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    run.status === "completed" ? "bg-green-500/20 text-green-400" :
-                    run.status === "failed" ? "bg-red-500/20 text-red-400" :
-                    "bg-yellow-500/20 text-yellow-400"
-                  }`}>
-                    {run.status === "completed" ? "完成" :
-                     run.status === "failed" ? "失败" : "运行中"}
-                  </span>
-                  <span className="text-xs text-[var(--text-muted)]">
-                    {new Date(run.createdAt).toLocaleString()}
-                  </span>
-                </div>
-                <span className="text-xs text-[var(--text-muted)]">
-                  {run.finishedAt ? `耗时 ${Math.round((new Date(run.finishedAt).getTime() - new Date(run.createdAt).getTime()) / 1000)}s` : ""}
-                </span>
-              </div>
-              {run.params && (
-                <div className="text-xs text-[var(--text-muted)] mb-2">
-                  参数: {run.params}
-                </div>
-              )}
-              {run.error && (
-                <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400 mb-2">
-                  {run.error}
-                </div>
-              )}
-              {run.result && (
-                <pre className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-2 rounded-lg overflow-x-auto max-h-32">
-                  {run.result}
-                </pre>
-              )}
-            </div>
-          ))
+          history.map((run) => {
+            // Parse result JSON for display
+            let resultData: { count?: number; summary?: string; date?: string } | null = null;
+            if (run.result) {
+              try {
+                resultData = JSON.parse(run.result);
+              } catch {
+                // ignore parse errors
+              }
+            }
+            return (
+              <HistoryCard key={run.id} run={run} resultData={resultData} />
+            );
+          })
         )}
       </div>
     </div>
