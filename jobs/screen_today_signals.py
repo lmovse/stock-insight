@@ -150,7 +150,7 @@ def find_today_signal(df_30min: pd.DataFrame, today: str) -> dict | None:
 
 def main():
     parser = argparse.ArgumentParser(description="当日信号检测脚本")
-    parser.add_argument("--date", type=str, default=None, help="指定日期 (YYYYMMDD格式)，默认为今天")
+    parser.add_argument("--date", type=str, required=True, help="日期，如 20260522")
     args = parser.parse_args()
 
     today = args.date if args.date else datetime.now().strftime("%Y%m%d")
