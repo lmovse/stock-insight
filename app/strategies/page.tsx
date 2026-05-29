@@ -163,7 +163,7 @@ export default function StrategiesPage() {
             activeTab === "ai" ? "bg-[var(--accent)] text-black" : "bg-[var(--surface-solid)] text-[var(--text-muted)] hover:border-[var(--accent)]"
           }`}
         >
-          AI 策略
+          动态策略
         </button>
         <button
           onClick={() => setActiveTab("script")}
@@ -171,7 +171,7 @@ export default function StrategiesPage() {
             activeTab === "script" ? "bg-[var(--accent)] text-black" : "bg-[var(--surface-solid)] text-[var(--text-muted)] hover:border-[var(--accent)]"
           }`}
         >
-          脚本策略
+          静态策略
         </button>
       </div>
 
