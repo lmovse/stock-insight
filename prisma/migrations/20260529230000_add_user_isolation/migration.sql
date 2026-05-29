@@ -1,5 +1,8 @@
 -- Add user isolation fields to existing tables and create ScriptStrategy/ScriptRun tables
 
+-- SQLite requires foreign_keys=OFF for renaming/recreating tables with FK dependencies
+PRAGMA foreign_keys=off;
+
 -- 1. Add userId to SystemCategory
 ALTER TABLE "SystemCategory" ADD COLUMN "userId" TEXT NOT NULL DEFAULT 'global';
 CREATE INDEX "SystemCategory_userId_idx" ON "SystemCategory"("userId");
@@ -70,3 +73,5 @@ CREATE INDEX "ScriptRun_status_idx" ON "ScriptRun"("status");
 ALTER TABLE "StockConfig" ADD COLUMN "userId" TEXT;
 DROP INDEX IF EXISTS "StockConfig_enabled_idx";
 CREATE UNIQUE INDEX "StockConfig_userId_stockCode_purpose_key" ON "StockConfig"("userId", "stockCode", "purpose");
+
+PRAGMA foreign_keys=on;
