@@ -1,17 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+
+const GLOBAL_USER_ID = "global";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const user = await getCurrentUser();
+  const currentUserId = user?.id || GLOBAL_USER_ID;
   const { id } = await params;
+
   const strategy = await prisma.strategy.findUnique({
     where: { id },
-    include: { prompt: true },
+    include: { runs: { orderBy: { createdAt: "desc" }, take: 10 } },
   });
 
-  if (!strategy) return NextResponse.json({ error: "不存在" }, { status: 404 });
+  if (!strategy) {
+    return NextResponse.json({ error: "策略不存在" }, { status: 404 });
+  }
+
+  if (strategy.userId !== GLOBAL_USER_ID && strategy.userId !== currentUserId) {
+    return NextResponse.json({ error: "无权访问" }, { status: 403 });
+  }
+
   return NextResponse.json(strategy);
 }
 
@@ -19,29 +32,26 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
   const { id } = await params;
-  const { name, description, criteria, promptId } = await req.json();
 
-  const existing = await prisma.strategy.findUnique({
-    where: { id },
-  });
-  if (!existing) return NextResponse.json({ error: "不存在" }, { status: 404 });
-
-  if (promptId && promptId !== existing.promptId) {
-    const prompt = await prisma.prompt.findUnique({
-      where: { id: promptId },
-    });
-    if (!prompt) {
-      return NextResponse.json({ error: "提示词不存在" }, { status: 400 });
-    }
+  const existing = await prisma.strategy.findUnique({ where: { id } });
+  if (!existing) {
+    return NextResponse.json({ error: "策略不存在" }, { status: 404 });
   }
 
+  if (existing.userId !== GLOBAL_USER_ID && existing.userId !== user.id) {
+    return NextResponse.json({ error: "无权修改" }, { status: 403 });
+  }
+
+  const { name, description, criteria, promptId } = await req.json();
   const strategy = await prisma.strategy.update({
     where: { id },
     data: { name, description, criteria, promptId },
-    include: { prompt: true },
   });
-
   return NextResponse.json(strategy);
 }
 
@@ -49,13 +59,20 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
   const { id } = await params;
 
-  const existing = await prisma.strategy.findUnique({
-    where: { id },
-    include: { runs: true },
-  });
-  if (!existing) return NextResponse.json({ error: "不存在" }, { status: 404 });
+  const existing = await prisma.strategy.findUnique({ where: { id } });
+  if (!existing) {
+    return NextResponse.json({ error: "策略不存在" }, { status: 404 });
+  }
+
+  if (existing.userId !== GLOBAL_USER_ID && existing.userId !== user.id) {
+    return NextResponse.json({ error: "无权删除" }, { status: 403 });
+  }
 
   await prisma.strategy.delete({ where: { id } });
   return NextResponse.json({ success: true });
