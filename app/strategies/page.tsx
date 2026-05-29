@@ -159,16 +159,16 @@ export default function StrategiesPage() {
       <div className="flex gap-2 mb-4 shrink-0">
         <button
           onClick={() => setActiveTab("ai")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "ai" ? "bg-[var(--accent)] text-black" : "bg-[var(--surface-solid)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+            activeTab === "ai" ? "pill-active" : "bg-[var(--surface-solid)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
           }`}
         >
           动态策略
         </button>
         <button
           onClick={() => setActiveTab("script")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "script" ? "bg-[var(--accent)] text-black" : "bg-[var(--surface-solid)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+            activeTab === "script" ? "pill-active" : "bg-[var(--surface-solid)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
           }`}
         >
           静态策略
