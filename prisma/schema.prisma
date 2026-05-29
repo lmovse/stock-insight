@@ -185,12 +185,13 @@ model IndexDaily {
 
 model StockConfig {
   id        String   @id @default(cuid())
+  userId    String?
   stockCode String   // 格式: "600000.SH" / "000001.SZ"
   purpose   String   // "FIFTEEN_MIN" | "DAILY" | "REALTIME"
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  @@unique([stockCode, purpose])
+  @@unique([userId, stockCode, purpose])
   @@index([enabled])
 }
 
@@ -217,7 +218,7 @@ model SystemCategory {
 
 model Strategy {
   id          String   @id @default(cuid())
-  userId      String?
+  userId      String   @default("global")
   name        String
   description String?
   criteria    String?
@@ -233,7 +234,7 @@ model Strategy {
 
 model Prompt {
   id        String   @id @default(cuid())
-  userId    String?
+  userId    String   @default("global")
   name      String
   content   String
   createdAt DateTime @default(now())
@@ -246,6 +247,7 @@ model Prompt {
 
 model ScriptStrategy {
   id          String   @id @default(cuid())
+  userId      String   @default("global")
   name        String
   description String?
   scriptPath  String
