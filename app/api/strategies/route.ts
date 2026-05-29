@@ -31,6 +31,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "名称和提示词不能为空" }, { status: 400 });
   }
 
+  // Check prompt exists
+  const prompt = await prisma.prompt.findUnique({ where: { id: promptId } });
+  if (!prompt) {
+    return NextResponse.json({ error: "提示词不存在" }, { status: 400 });
+  }
+
   const strategy = await prisma.strategy.create({
     data: {
       userId: user.id,

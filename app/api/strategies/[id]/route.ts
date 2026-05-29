@@ -14,7 +14,7 @@ export async function GET(
 
   const strategy = await prisma.strategy.findUnique({
     where: { id },
-    include: { runs: { orderBy: { createdAt: "desc" }, take: 10 } },
+    include: { prompt: true, runs: { orderBy: { createdAt: "desc" }, take: 10 } },
   });
 
   if (!strategy) {
@@ -48,6 +48,15 @@ export async function PUT(
   }
 
   const { name, description, criteria, promptId } = await req.json();
+
+  // Validate prompt exists if being updated
+  if (promptId) {
+    const prompt = await prisma.prompt.findUnique({ where: { id: promptId } });
+    if (!prompt) {
+      return NextResponse.json({ error: "提示词不存在" }, { status: 400 });
+    }
+  }
+
   const strategy = await prisma.strategy.update({
     where: { id },
     data: { name, description, criteria, promptId },
