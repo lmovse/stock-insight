@@ -1,22 +1,23 @@
 -- Fix user isolation: cleanup after partial migration failure
--- userId columns already exist in Prompt and StockConfig, skip ADD COLUMN
 
 PRAGMA foreign_keys=off;
 
 -- 1. Delete leftover old_Strategy table
 DROP TABLE IF EXISTS "old_Strategy";
 
--- 2. StockConfig: ensure indexes are correct (userId column already exists)
+-- 2. Add userId to StockConfig
+ALTER TABLE "StockConfig" ADD COLUMN "userId" TEXT;
 DROP INDEX IF EXISTS "StockConfig_enabled_idx";
 CREATE UNIQUE INDEX IF NOT EXISTS "StockConfig_userId_stockCode_purpose_key" ON "StockConfig"("userId", "stockCode", "purpose");
 
--- 3. Prompt: ensure index exists (userId column already exists)
-CREATE INDEX IF NOT EXISTS "Prompt_userId_idx" ON "Prompt"("userId");
+-- 3. Fix Prompt.userId: nullable -> NOT NULL default 'global'
+ALTER TABLE "Prompt" ADD COLUMN "userId" TEXT NOT NULL DEFAULT 'global';
+UPDATE "Prompt" SET "userId" = COALESCE("userId", 'global') WHERE "userId" IS NULL;
 
--- 4. Add userId index to Strategy (if not exists)
+-- 4. Add userId index to Strategy
 CREATE INDEX IF NOT EXISTS "Strategy_userId_idx" ON "Strategy"("userId");
 
--- 5. Add MinuteCandle indexes (if not exist)
+-- 5. Add MinuteCandle indexes
 CREATE INDEX IF NOT EXISTS "MinuteCandle_tradeDate_idx" ON "MinuteCandle"("tradeDate");
 CREATE INDEX IF NOT EXISTS "MinuteCandle_tsCode_tradeDate_idx" ON "MinuteCandle"("tsCode", "tradeDate");
 
