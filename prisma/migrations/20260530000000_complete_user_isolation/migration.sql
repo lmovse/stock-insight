@@ -1,12 +1,8 @@
--- Add user isolation fields to existing tables and create ScriptStrategy/ScriptRun tables
+-- Complete user isolation setup (handles remaining changes after partial migration)
 
 PRAGMA foreign_keys=off;
 
--- 1. Add userId to SystemCategory (skip if already exists)
-ALTER TABLE "SystemCategory" ADD COLUMN "userId" TEXT NOT NULL DEFAULT 'global';
-CREATE INDEX IF NOT EXISTS "SystemCategory_userId_idx" ON "SystemCategory"("userId");
-
--- 2. Modify Strategy.userId: nullable -> NOT NULL default 'global'
+-- Strategy: change userId to NOT NULL default 'global'
 ALTER TABLE "Strategy" RENAME TO "old_Strategy";
 CREATE TABLE "Strategy" (
     "id" TEXT NOT NULL PRIMARY KEY,
@@ -24,7 +20,7 @@ INSERT INTO "Strategy" ("id", "userId", "name", "description", "criteria", "prom
 DROP TABLE "old_Strategy";
 CREATE INDEX IF NOT EXISTS "Strategy_userId_idx" ON "Strategy"("userId");
 
--- 3. Modify Prompt.userId: nullable -> NOT NULL default 'global'
+-- Prompt: change userId to NOT NULL default 'global'
 ALTER TABLE "Prompt" RENAME TO "old_Prompt";
 CREATE TABLE "Prompt" (
     "id" TEXT NOT NULL PRIMARY KEY,
@@ -39,7 +35,7 @@ INSERT INTO "Prompt" ("id", "userId", "name", "content", "createdAt", "updatedAt
 DROP TABLE "old_Prompt";
 CREATE INDEX IF NOT EXISTS "Prompt_userId_idx" ON "Prompt"("userId");
 
--- 4. Create ScriptStrategy table (skip if exists)
+-- Create ScriptStrategy table
 CREATE TABLE IF NOT EXISTS "ScriptStrategy" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "userId" TEXT NOT NULL DEFAULT 'global',
@@ -52,7 +48,7 @@ CREATE TABLE IF NOT EXISTS "ScriptStrategy" (
 );
 CREATE INDEX IF NOT EXISTS "ScriptStrategy_userId_idx" ON "ScriptStrategy"("userId");
 
--- 5. Create ScriptRun table (skip if exists)
+-- Create ScriptRun table
 CREATE TABLE IF NOT EXISTS "ScriptRun" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "scriptStrategyId" TEXT NOT NULL,
@@ -68,9 +64,7 @@ CREATE TABLE IF NOT EXISTS "ScriptRun" (
 CREATE INDEX IF NOT EXISTS "ScriptRun_scriptStrategyId_idx" ON "ScriptRun"("scriptStrategyId");
 CREATE INDEX IF NOT EXISTS "ScriptRun_status_idx" ON "ScriptRun"("status");
 
--- 6. Add userId to StockConfig (skip if column already exists)
--- SQLite doesn't support IF NOT EXISTS for ALTER TABLE ADD COLUMN,
--- so we check manually
+-- Add userId to StockConfig
 ALTER TABLE "StockConfig" ADD COLUMN "userId" TEXT;
 DROP INDEX IF EXISTS "StockConfig_enabled_idx";
 CREATE UNIQUE INDEX IF NOT EXISTS "StockConfig_userId_stockCode_purpose_key" ON "StockConfig"("userId", "stockCode", "purpose");
