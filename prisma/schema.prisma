@@ -209,11 +209,14 @@ model SyncLog {
 
 model SystemCategory {
   id        String   @id @default(cuid())
+  userId    String   @default("global")
   code      String   @unique
   name      String
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Strategy {
