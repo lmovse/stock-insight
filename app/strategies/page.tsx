@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -52,15 +52,22 @@ export default function StrategiesPage() {
     return () => { document.body.style.overflow = ""; };
   }, [dialog]);
 
-  const fetchStrategies = () => {
-    fetch("/api/strategies")
+  const fetchStrategies = useCallback(() => {
+    const controller = new AbortController();
+    fetch("/api/strategies", { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setStrategies(data); })
-      .catch(() => {});
-  };
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Failed to fetch strategies:", err);
+        }
+      });
+    return controller;
+  }, []);
 
-  const fetchPrompts = () => {
-    fetch("/api/prompts")
+  const fetchPrompts = useCallback(() => {
+    const controller = new AbortController();
+    fetch("/api/prompts", { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -68,8 +75,13 @@ export default function StrategiesPage() {
           if (data.length > 0 && !newPromptId) setNewPromptId(data[0].id);
         }
       })
-      .catch(() => {});
-  };
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Failed to fetch prompts:", err);
+        }
+      });
+    return controller;
+  }, [newPromptId]);
 
   const handleCreate = async () => {
     if (!newName || !newPromptId) return;

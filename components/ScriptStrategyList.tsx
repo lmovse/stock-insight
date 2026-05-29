@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface ScriptStrategy {
   id: string;
@@ -31,6 +31,24 @@ export default function ScriptStrategyList() {
   const [currentRun, setCurrentRun] = useState<ScriptRun | null>(null);
   const [history, setHistory] = useState<ScriptRun[]>([]);
   const [polling, setPolling] = useState(false);
+  const pollingRef = useRef(false);
+  const selectedStrategyIdRef = useRef(selectedStrategyId);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    selectedStrategyIdRef.current = selectedStrategyId;
+  }, [selectedStrategyId]);
+
+  // Clear polling interval when selectedStrategyId changes
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [selectedStrategyId]);
 
   useEffect(() => {
     fetchStrategies();
@@ -43,7 +61,8 @@ export default function ScriptStrategyList() {
   }, [selectedStrategyId]);
 
   const fetchStrategies = () => {
-    fetch("/api/scripts/strategies")
+    const controller = new AbortController();
+    fetch("/api/scripts/strategies", { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -53,63 +72,93 @@ export default function ScriptStrategyList() {
           }
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Failed to fetch strategies:", err);
+        }
+      });
+    return controller;
   };
 
   const fetchHistory = (strategyId: string) => {
-    fetch(`/api/scripts/runs?strategyId=${strategyId}`)
+    const controller = new AbortController();
+    fetch(`/api/scripts/runs?strategyId=${strategyId}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
           setHistory(data);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Failed to fetch history:", err);
+        }
+      });
+    return controller;
   };
 
   const pollRunStatus = useCallback((runId: string) => {
+    // Prevent multiple simultaneous polls
+    if (pollingRef.current) return;
+    pollingRef.current = true;
     setPolling(true);
-    const interval = setInterval(async () => {
+    const currentStrategyId = selectedStrategyIdRef.current;
+    intervalRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`/api/scripts/runs/${runId}`);
+        const controller = new AbortController();
+        const res = await fetch(`/api/scripts/runs/${runId}`, { signal: controller.signal });
         const data: ScriptRun = await res.json();
         setCurrentRun(data);
         if (data.status === "completed" || data.status === "failed") {
-          clearInterval(interval);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          pollingRef.current = false;
           setPolling(false);
           setRunning(false);
-          if (selectedStrategyId) {
-            fetchHistory(selectedStrategyId);
+          const strategyId = selectedStrategyIdRef.current;
+          if (strategyId) {
+            fetchHistory(strategyId);
           }
         }
-      } catch {
-        clearInterval(interval);
+      } catch (err) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        pollingRef.current = false;
         setPolling(false);
         setRunning(false);
+        console.error("Polling error:", err);
       }
     }, 2000);
-    return () => clearInterval(interval);
-  }, [selectedStrategyId]);
+  }, []);
 
   const handleRun = async () => {
-    if (!selectedStrategyId) return;
+    if (!selectedStrategyId || pollingRef.current) return;
     setRunning(true);
     setCurrentRun(null);
 
     try {
+      const controller = new AbortController();
       const res = await fetch(`/api/scripts/strategies/${selectedStrategyId}/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date }),
+        signal: controller.signal,
       });
       const data = await res.json();
       if (data.runId) {
         pollRunStatus(data.runId);
       } else {
+        pollingRef.current = false;
         setRunning(false);
       }
-    } catch {
+    } catch (err) {
+      pollingRef.current = false;
       setRunning(false);
+      console.error("Failed to run strategy:", err);
     }
   };
 
