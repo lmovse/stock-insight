@@ -27,6 +27,7 @@ export default function ScriptStrategyList() {
   const [strategies, setStrategies] = useState<ScriptStrategy[]>([]);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>("");
   const [date, setDate] = useState<string>("");
+  const [dateError, setDateError] = useState<string>("");
   const [running, setRunning] = useState(false);
   const [currentRun, setCurrentRun] = useState<ScriptRun | null>(null);
   const [history, setHistory] = useState<ScriptRun[]>([]);
@@ -137,6 +138,11 @@ export default function ScriptStrategyList() {
 
   const handleRun = async () => {
     if (!selectedStrategyId || pollingRef.current) return;
+    if (!date.trim()) {
+      setDateError("请输入日期参数");
+      return;
+    }
+    setDateError("");
     setRunning(true);
     setCurrentRun(null);
 
@@ -186,10 +192,13 @@ export default function ScriptStrategyList() {
             <input
               type="text"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => { setDate(e.target.value); setDateError(""); }}
               placeholder="YYYYMMDD，如 20250529"
               className="w-full px-3 py-2.5 rounded-lg text-sm bg-[var(--surface-solid)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
             />
+            {dateError && (
+              <p className="mt-1 text-xs text-red-400">{dateError}</p>
+            )}
           </div>
         </div>
         <button
