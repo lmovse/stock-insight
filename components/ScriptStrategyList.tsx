@@ -154,6 +154,30 @@ export default function ScriptStrategyList() {
     }
   }, [currentRun?.result]);
 
+  // Memoize markdown table to avoid re-creating on every render
+  const signalsMarkdown = useMemo(() => {
+    if (!parsedResult?.data || parsedResult.data.length === 0) return null;
+    const items = parsedResult.data.slice(0, 50);
+    const rows = items.map((item: Record<string, unknown>) =>
+      `| ${item.tsCode} | ${item.minLow} | +${Number(item.difChange).toFixed(4)} | +${Number(item.kChange).toFixed(2)} | ${item.currentPrice} |`
+    );
+    return [
+      "| 代码 | 最低价 | dif变化 | k变化 | 当前价 |",
+      "| --- | --- | --- | --- | --- |",
+      ...rows
+    ].join("\n");
+  }, [parsedResult?.data]);
+
+  // Memoize AI analysis markdown
+  const analysisMarkdown = useMemo(() => {
+    if (!currentRun?.analysis) return null;
+    try {
+      return currentRun.analysis;
+    } catch {
+      return null;
+    }
+  }, [currentRun?.analysis]);
+
   // Keep ref in sync with state
   useEffect(() => {
     selectedStrategyIdRef.current = selectedStrategyId;
@@ -348,35 +372,19 @@ export default function ScriptStrategyList() {
               {currentRun.error}
             </div>
           )}
-          {currentRun.result && parsedResult?.data && (
-            <div className="mb-3 text-xs text-[var(--text-secondary)]">
-              <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">信号列表 ({parsedResult.count} 个)</h4>
-              <div className="overflow-x-auto max-h-64">
-                {(() => {
-                  const items = parsedResult.data.slice(0, 50);
-                  const md = [
-                    "| 代码 | 最低价 | dif变化 | k变化 | 当前价 |",
-                    "| --- | --- | --- | --- | --- |",
-                    ...items.map((item: Record<string, unknown>) =>
-                      `| ${item.tsCode} | ${item.minLow} | +${Number(item.difChange).toFixed(4)} | +${Number(item.kChange).toFixed(2)} | ${item.currentPrice} |`
-                    )
-                  ].join("\n");
-                  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{md}</ReactMarkdown>;
-                })()}
+          {signalsMarkdown && (
+            <div className="mb-3">
+              <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">信号列表 ({parsedResult?.count} 个)</h4>
+              <div className="overflow-x-auto max-h-64 text-xs">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{signalsMarkdown}</ReactMarkdown>
               </div>
             </div>
           )}
-          {currentRun.analysis && (
+          {analysisMarkdown && (
             <div>
               <h4 className="text-xs font-medium text-[var(--text-muted)] mb-2">AI 分析</h4>
               <div className="text-xs text-[var(--text-secondary)] leading-relaxed prose prose-sm max-w-none [&_hr]:border-[var(--border)] [&_hr]:opacity-50">
-                {(() => {
-                  try {
-                    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentRun.analysis}</ReactMarkdown>;
-                  } catch {
-                    return <pre>{currentRun.analysis}</pre>;
-                  }
-                })()}
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysisMarkdown}</ReactMarkdown>
               </div>
             </div>
           )}
