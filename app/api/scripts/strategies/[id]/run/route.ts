@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { spawn } from "child_process";
 import path from "path";
 import { analyzeScriptResult } from "@/lib/ai";
+import { addAILog } from "@/lib/aiLog";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -57,17 +58,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // 立即返回，后台执行
   execPromise
     .then(async (result) => {
-      // Get AI config (same pattern as existing strategy run)
+      // 即使脚本成功执行，AI分析失败也不应影响最终状态
+      let analysis = null;
       const aiOptions = {
         baseURL: process.env.OPENAI_BASE_URL ?? "",
         apiKey: process.env.OPENAI_API_KEY ?? "",
         model: process.env.OPENAI_MODEL ?? "gpt-4",
       };
 
-      // Call AI analysis if configured
-      let analysis = null;
       if (aiOptions.apiKey && aiOptions.baseURL) {
-        analysis = await analyzeScriptResult(strategy.name, result, aiOptions);
+        try {
+          analysis = await analyzeScriptResult(strategy.name, result, aiOptions);
+          // 记录 AI 日志
+          addAILog({
+            runId: run.id,
+            stockCode: "", // 脚本运行无单股票概念
+            messages: [], // analyzeScriptResult 内部构建消息，不对外暴露
+            response: analysis,
+          });
+        } catch (aiErr: unknown) {
+          // AI 分析失败不影响脚本运行状态，仅记录错误
+          console.error(`[${run.id}] AI analysis failed:`, aiErr instanceof Error ? aiErr.message : String(aiErr));
+        }
       }
 
       await prisma.scriptRun.update({
@@ -80,10 +92,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         where: { id: run.id },
         data: { status: "failed", error: err.message, finishedAt: new Date() },
       });
-    })
-    .catch((err) => {
-      // 避免未处理的拒绝（但update失败已记录到run.status）
-      console.error("Script run update failed:", err);
+      console.error(`[${run.id}] Script execution failed:`, err.message);
     });
 
   return NextResponse.json({ runId: run.id });
