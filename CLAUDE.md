@@ -65,3 +65,35 @@ Key files:
 - Custom fonts: Archivo (display), JetBrains Mono (code)
 - Grid background pattern, subtle grain overlay, industrial scrollbar styling
 - hljs syntax highlighting theme (github-dark)
+
+## Python Scripts
+
+**Python interpreter path** (important):
+- Prefer project venv: `.venv/bin/python`
+- Fallback: `python3`
+- Production may not have `python` command - must use `python3`
+
+```typescript
+// Correct pattern (参考 lib/tushare/sync.ts)
+const VENV_PYTHON = path.resolve(process.cwd(), ".venv/bin/python");
+const PYTHON_CMD = existsSync(VENV_PYTHON) ? VENV_PYTHON : "python3";
+```
+
+**Database path**:
+- Never hardcode `prisma/dev.db` - must use environment variable
+- Python: `os.environ.get("DATABASE_PATH", "prisma/dev.db")`
+- Node.js: `process.env.DATABASE_URL?.replace("file:", "")`
+
+## Database & Migrations
+
+**Schema change rules**:
+- Any `schema.prisma` modification requires a corresponding migration file
+- Migration files go in `prisma/migrations/` directory
+- Naming format: `YYYYMMDDHHMMSS_description/migration.sql`
+- Never modify production database tables directly - always use migration
+
+**Migration notes**:
+- SQLite's `ALTER TABLE ADD COLUMN` does not support `IF NOT EXISTS`
+- Table rename requires `PRAGMA foreign_keys=off`
+- Rebuilding tables with FK constraints requires disabling FK first
+- After failed migration, mark as complete: `npx prisma migrate resolve --applied <migration_name>`
