@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { spawn } from "child_process";
 import path from "path";
+import { existsSync } from "fs";
 import { analyzeScriptResult } from "@/lib/ai";
 import { addAILog } from "@/lib/aiLog";
+
+const VENV_PYTHON = path.resolve(process.cwd(), ".venv/bin/python");
+const PYTHON_CMD = existsSync(VENV_PYTHON) ? VENV_PYTHON : "python3";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -42,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (date) args.push("--date", date);
 
   const execPromise = new Promise<string>((resolve, reject) => {
-    const proc = spawn("python", args);
+    const proc = spawn(PYTHON_CMD, args);
     let stdout = "";
     let stderr = "";
 
