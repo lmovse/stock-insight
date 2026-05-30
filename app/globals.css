@@ -147,6 +147,12 @@ body {
   border-radius: var(--radius-sm);
 }
 
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
 /* ============================================
    SELECT — custom dropdown arrow
    ============================================ */

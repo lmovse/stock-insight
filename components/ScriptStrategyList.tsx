@@ -77,11 +77,18 @@ function HistoryCard({ run, resultData }: HistoryCardProps) {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3">
-          <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
+          <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1.5 ${
             run.status === "completed" ? "bg-green-500/20 text-green-400" :
             run.status === "failed" ? "bg-red-500/20 text-red-400" :
             "bg-yellow-500/20 text-yellow-400"
           }`}>
+            {run.status !== "completed" && run.status !== "failed" && (
+              <span className="flex gap-0.5">
+                <span className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce [animation-delay:300ms]" />
+              </span>
+            )}
             {run.status === "completed" ? "完成" :
              run.status === "failed" ? "失败" : "运行中"}
           </span>
@@ -399,15 +406,28 @@ export default function ScriptStrategyList() {
         <div className="glass-card rounded-xl p-4 shrink-0 overflow-y-auto max-h-96">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm font-semibold text-[var(--text-primary)]">运行结果</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${
+            <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1.5 ${
               currentRun.status === "completed" ? "bg-green-500/20 text-green-400" :
               currentRun.status === "failed" ? "bg-red-500/20 text-red-400" :
-              "bg-yellow-500/20 text-yellow-400"
+              "bg-[var(--accent)]/20 text-[var(--accent)]"
             }`}>
+              {currentRun.status !== "completed" && currentRun.status !== "failed" && (
+                <span className="flex gap-0.5">
+                  <span className="w-1 h-1 bg-[var(--accent)] rounded-full animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1 h-1 bg-[var(--accent)] rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1 h-1 bg-[var(--accent)] rounded-full animate-bounce [animation-delay:300ms]" />
+                </span>
+              )}
               {currentRun.status === "completed" ? "完成" :
                currentRun.status === "failed" ? "失败" : "运行中"}
             </span>
           </div>
+          {currentRun.status !== "completed" && currentRun.status !== "failed" && !parsedResult?.data && (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <div className="w-5 h-5 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+              <p className="text-xs text-[var(--text-muted)] animate-pulse">正在分析数据，请稍候...</p>
+            </div>
+          )}
           {currentRun.error && (
             <div className="mb-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
               {currentRun.error}

@@ -71,7 +71,7 @@ export default function StockSearch() {
           onFocus={handleFocus}
           placeholder="搜索股票..."
           disabled={!user}
-          className={`w-full px-3 py-1.5 pl-8 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl border border-[var(--border)] bg-[var(--surface)] backdrop-blur-sm focus:border-[var(--accent)] focus:outline-none transition-all font-medium ${!user ? 'cursor-not-allowed opacity-60' : ''}`}
+          className={`w-full px-3 py-1.5 pl-8 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl border border-[var(--border)] bg-[var(--surface)] backdrop-blur-sm focus:border-[var(--accent)] transition-all font-medium ${!user ? 'cursor-not-allowed opacity-60' : ''}`}
         />
         <svg
           className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]"
