@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Next.js 16 application with App Router. The project is in early stages - the core structure exists but most features have not been implemented yet. The project name in package.json is "skills".
+Stock analysis and trading strategy platform built with Next.js 16. Features include stock search with K-line charts, watchlist management, portfolio tracking, AI-powered dynamic strategies, quantitative static strategies, and technical indicators.
 
 ## Commands
 
@@ -21,50 +21,79 @@ npm run lint     # Run ESLint
 - **Styling**: Tailwind CSS 4 with custom CSS variables for theming (defined in `app/globals.css`)
 - **Language**: TypeScript
 - **Output**: Standalone Docker-compatible build (`output: "standalone"` in next.config.ts)
+- **Auth**: JWT with jose library
+- **Database**: SQLite with Prisma ORM
 
 ### Theme System
 
 Theme is implemented via CSS custom properties in `app/globals.css`:
-- Dark mode (default): yellow accent (`--accent: #ffd60a`), dark backgrounds
-- Light mode: gold accent (`--accent: #d9a300`), light backgrounds
+- Dark mode (default): salmon accent (`--accent: #fb7185`), dark backgrounds
+- Light mode: rose accent (`--accent: #f43f5e`), light backgrounds
 - Toggled via `ThemeToggle` component, persisted to localStorage
 
 Key files:
 - `components/ThemeProvider.tsx` - Theme context with system/dark/light options
 - `components/ThemeToggle.tsx` - Cycle button (system → dark → light)
 
-### Dependencies (indicating planned features)
+### Dependencies
 
 - `gray-matter`, `react-markdown`, `remark-gfm`, `rehype-highlight` - Markdown processing
 - `isomorphic-git` - Git operations
 - `jszip` - Package file handling
-
-### Rewrites
-
-`next.config.ts` rewrites `/.well-known/skills/index.json` to `/.well-known/skills`, suggesting skills data lives at that path.
+- `jose` - JWT authentication
+- `hqchart` - K-line charts
 
 ## Project Structure
 
 ```
-├── app/                    # Next.js App Router
-│   └── globals.css         # Tailwind + custom CSS variables + syntax highlighting
+├── app/
+│   ├── api/                    # API routes
+│   │   ├── auth/              # Authentication (login, register, logout, me)
+│   │   ├── config/            # System configuration (categories, stocks)
+│   │   ├── portfolio/         # Position and trade management
+│   │   ├── prompts/           # AI prompt templates
+│   │   ├── strategies/         # Strategy CRUD
+│   │   ├── strategy-runs/      # Strategy execution history
+│   │   ├── stocks/             # Stock data (search, kline, sync)
+│   │   ├── scripts/            # Static script strategies
+│   │   └── watchlist/          # Watchlist management
+│   ├── config/                 # System configuration page
+│   ├── favorites/              # Watchlist page
+│   ├── login/                  # Login page
+│   ├── prompts/                # Prompt management pages
+│   ├── register/               # Registration page
+│   ├── strategies/             # Strategy pages
+│   │   └── runs/               # Strategy run history and detail
+│   └── stock/[code]/           # Stock detail page
 ├── components/
-│   ├── ThemeProvider.tsx   # Theme context
-│   └── ThemeToggle.tsx     # Theme cycle button
+│   ├── config/                 # Configuration components
+│   ├── HQChart.tsx             # K-line chart component
+│   ├── IndicatorPanel.tsx      # Technical indicators panel
+│   ├── IndicatorModal.tsx      # Indicator parameter settings
+│   ├── PortfolioPanel.tsx      # Position management
+│   ├── ScriptStrategyList.tsx  # Static strategy list
+│   ├── StockSearch.tsx         # Stock search component
+│   ├── StockSelector.tsx       # Stock multi-select
+│   ├── StrategyRunner.tsx      # Strategy execution
+│   ├── WatchlistPanel.tsx       # Watchlist panel
+│   └── ...
 ├── lib/
-│   └── utils.ts            # Utility functions (formatDate)
-├── public/                 # Static assets
-├── next.config.ts          # Next.js config with rewrites
-├── package.json
-└── tsconfig.json           # Path alias: @/* → ./*
+│   ├── auth.ts                # JWT authentication
+│   ├── indicators.ts           # Technical indicator calculations
+│   ├── prisma.ts              # Prisma client
+│   └── types.ts               # TypeScript types
+├── prisma/
+│   └── schema.prisma          # Database schema
+└── jobs/
+    └── sync.ts                # Data sync jobs
 ```
 
 ## Styling Conventions
 
 - Uses CSS custom properties via Tailwind's `@theme inline` directive
-- Custom fonts: Archivo (display), JetBrains Mono (code)
+- Custom fonts: Plus Jakarta Sans (display), DM Mono (code)
 - Grid background pattern, subtle grain overlay, industrial scrollbar styling
-- hljs syntax highlighting theme (github-dark)
+- hljs syntax highlighting theme
 
 ## Python Scripts
 
@@ -74,7 +103,7 @@ Key files:
 - Production may not have `python` command - must use `python3`
 
 ```typescript
-// Correct pattern (参考 lib/tushare/sync.ts)
+// Correct pattern
 const VENV_PYTHON = path.resolve(process.cwd(), ".venv/bin/python");
 const PYTHON_CMD = existsSync(VENV_PYTHON) ? VENV_PYTHON : "python3";
 ```
