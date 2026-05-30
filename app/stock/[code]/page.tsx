@@ -215,7 +215,7 @@ export default function StockPage() {
                 className={`px-3 py-1 text-xs font-mono uppercase tracking-wide border transition-colors rounded-lg ${
                   period === p
                     ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                    : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
+                    : "bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 {p === "15min" ? "15分" : "60分"}
@@ -230,7 +230,7 @@ export default function StockPage() {
                 className={`px-3 py-1 text-xs font-mono uppercase tracking-wide border transition-colors rounded-lg ${
                   period === p
                     ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                    : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
+                    : "bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 {p === "daily" ? "日K" : p === "weekly" ? "周K" : "月K"}

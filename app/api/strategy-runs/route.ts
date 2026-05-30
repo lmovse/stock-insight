@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+
+const GLOBAL_USER_ID = "global";
 
 export async function GET(req: NextRequest) {
+  const user = await getCurrentUser();
+  const currentUserId = user?.id || GLOBAL_USER_ID;
+
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
   const strategyId = searchParams.get("strategyId");
@@ -10,7 +16,14 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get("limit") ?? "20");
   const offset = parseInt(searchParams.get("offset") ?? "0");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = {
+    strategy: {
+      OR: [
+        { userId: GLOBAL_USER_ID },
+        { userId: currentUserId },
+      ],
+    },
+  };
   if (status) where.status = status;
   if (strategyId) where.strategyId = strategyId;
 
@@ -19,9 +32,15 @@ export async function GET(req: NextRequest) {
     where.stockCodes = { contains: stockCode };
   }
 
-  // Search by strategy name
+  // Search by strategy name (must preserve user isolation)
   if (strategyName) {
-    where.strategy = { name: { contains: strategyName } };
+    where.strategy = {
+      OR: [
+        { userId: GLOBAL_USER_ID },
+        { userId: currentUserId },
+      ],
+      name: { contains: strategyName },
+    };
   }
 
   const [runs, total] = await Promise.all([

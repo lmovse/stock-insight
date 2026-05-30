@@ -120,7 +120,7 @@ export default function CategoryManager() {
 
       {/* Form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="shrink-0 px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
+        <form onSubmit={handleSubmit} className="shrink-0 px-4 py-3 border-b border-[var(--border)]">
           <div className="flex flex-wrap gap-3 items-end">
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1">代码</label>

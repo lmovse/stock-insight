@@ -160,7 +160,7 @@ export default function StrategiesPage() {
         <button
           onClick={() => setActiveTab("ai")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
-            activeTab === "ai" ? "pill-active" : "bg-[var(--surface-solid)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
+            activeTab === "ai" ? "pill-active" : "bg-[var(--surface-solid)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
           }`}
         >
           动态策略
@@ -168,7 +168,7 @@ export default function StrategiesPage() {
         <button
           onClick={() => setActiveTab("script")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
-            activeTab === "script" ? "pill-active" : "bg-[var(--surface-solid)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
+            activeTab === "script" ? "pill-active" : "bg-[var(--surface-solid)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
           }`}
         >
           静态策略
