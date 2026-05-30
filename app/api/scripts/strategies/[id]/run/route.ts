@@ -46,7 +46,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (date) args.push("--date", date);
 
   const execPromise = new Promise<string>((resolve, reject) => {
-    const proc = spawn(PYTHON_CMD, args);
+    const proc = spawn(PYTHON_CMD, args, {
+      env: { ...process.env, DATABASE_PATH: process.env.DATABASE_URL?.replace("file:", "") || "prisma/dev.db" },
+    });
     let stdout = "";
     let stderr = "";
 

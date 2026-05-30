@@ -10,8 +10,9 @@ from datetime import datetime, timedelta
 import sys
 import json
 import argparse
+import os
 
-DB_PATH = "prisma/dev.db"
+DB_PATH = os.environ.get("DATABASE_PATH", "prisma/dev.db")
 
 
 def get_stock_codes():
