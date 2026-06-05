@@ -27,15 +27,19 @@ export function startScheduler() {
   started = true;
 
   for (const task of TASKS) {
-    const scheduled = cron.schedule(task.cron, async () => {
-      console.log(`[scheduler] starting ${task.name}`);
-      try {
-        await task.fn();
-        console.log(`[scheduler] ${task.name} completed`);
-      } catch (err) {
-        console.error(`[scheduler] ${task.name} error:`, err);
-      }
-    });
+    const scheduled = cron.schedule(
+      task.cron,
+      async () => {
+        console.log(`[scheduler] starting ${task.name}`);
+        try {
+          await task.fn();
+          console.log(`[scheduler] ${task.name} completed`);
+        } catch (err) {
+          console.error(`[scheduler] ${task.name} error:`, err);
+        }
+      },
+      { timezone: 'Asia/Shanghai' },
+    );
     scheduledTasks.push(scheduled);
     console.log(`[scheduler] registered: ${task.name} (${task.cron})`);
   }
