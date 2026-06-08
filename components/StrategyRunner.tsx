@@ -22,7 +22,7 @@ export default function StrategyRunner() {
     return d.toISOString().split("T")[0];
   });
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
-  const [dataConfig, setDataConfig] = useState({ kline: true });
+  const [dataConfig, setDataConfig] = useState({ open: true, high: true, low: false, close: false, volume: true });
 
   const [status, setStatus] = useState<RunStatus>("idle");
   const [taskId, setTaskId] = useState<string | null>(null);

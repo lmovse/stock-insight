@@ -26,9 +26,27 @@ function buildPromptMessages(promptTemplate: string, stockCode: string, dateRang
   ];
 }
 
-function formatKLineData(data: { date: number; open: number; high: number; low: number; close: number; volume: number }[]) {
-  const header = "日期,开,高,低,收,成交量";
-  const rows = data.map((d) => `${d.date},${d.open},${d.high},${d.low},${d.close},${d.volume}`);
+function formatKLineData(
+  data: { date: number; open: number; high: number; low: number; close: number; volume: number }[],
+  selectedFields: { open: boolean; high: boolean; low: boolean; close: boolean; volume: boolean }
+) {
+  const headerFields: string[] = ["日期"];
+  if (selectedFields.open) headerFields.push("开");
+  if (selectedFields.high) headerFields.push("高");
+  if (selectedFields.low) headerFields.push("低");
+  if (selectedFields.close) headerFields.push("收");
+  if (selectedFields.volume) headerFields.push("成交量");
+
+  const header = headerFields.join(",");
+  const rows = data.map((d) => {
+    const row: (string | number)[] = [d.date];
+    if (selectedFields.open) row.push(d.open);
+    if (selectedFields.high) row.push(d.high);
+    if (selectedFields.low) row.push(d.low);
+    if (selectedFields.close) row.push(d.close);
+    if (selectedFields.volume) row.push(d.volume);
+    return row.join(",");
+  });
   return [header, ...rows].join("\n");
 }
 
@@ -99,7 +117,7 @@ async function getKLineData(code: string) {
   }));
 }
 
-async function processStock(runId: string, stockCode: string, startDate: string, endDate: string, promptTemplate: string, criteria: string) {
+async function processStock(runId: string, stockCode: string, startDate: string, endDate: string, promptTemplate: string, criteria: string, dataConfig: { open: boolean; high: boolean; low: boolean; close: boolean; volume: boolean }) {
   await prisma.strategyRunResult.updateMany({
     where: { runId, stockCode },
     data: { status: "running" },
@@ -123,7 +141,7 @@ async function processStock(runId: string, stockCode: string, startDate: string,
       return { stockCode, status: "error" };
     }
 
-    const klineText = formatKLineData(klineData);
+    const klineText = formatKLineData(klineData, dataConfig);
     const dateRange = `${startDate} ~ ${endDate}`;
     const messages = buildPromptMessages(promptTemplate, stockCode, dateRange, klineText, criteria);
 
@@ -184,6 +202,7 @@ async function runStrategy(runId: string) {
   const stockCodes = JSON.parse(run.stockCodes);
   const promptTemplate = run.strategy.prompt.content;
   const criteria = run.strategy.criteria ?? "";
+  const dataConfig = JSON.parse(run.dataConfig ?? '{"open":true,"high":true,"low":false,"close":false,"volume":true}');
 
   let waitingResults = await prisma.strategyRunResult.findMany({
     where: { runId, status: "waiting" },
@@ -207,7 +226,7 @@ async function runStrategy(runId: string) {
     console.log(`[${runId}] Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.map((b) => b.stockCode).join(", ")}`);
 
     const results = await Promise.allSettled(
-      batch.map((b) => processStock(runId, b.stockCode, run.startDate, run.endDate, promptTemplate, criteria))
+      batch.map((b) => processStock(runId, b.stockCode, run.startDate, run.endDate, promptTemplate, criteria, dataConfig))
     );
 
     const succeeded = results.filter((r) => r.status === "fulfilled" && r.value.status !== "error").length;
@@ -259,7 +278,7 @@ export async function POST(
       stockCodes: JSON.stringify(stockCodes),
       startDate,
       endDate,
-      dataConfig: JSON.stringify(dataConfig ?? { kline: true }),
+      dataConfig: JSON.stringify(dataConfig ?? { open: true, high: true, low: false, close: false, volume: true }),
       status: "running",
       startedAt: new Date(),
     },
