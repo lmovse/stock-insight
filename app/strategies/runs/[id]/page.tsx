@@ -160,6 +160,19 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
     return true;
   });
 
+  const handleExport = () => {
+    const codes = filteredResults.map((r) => r.stockCode.replace(/\.(SZ|SH|BJ|HK)$/i, ""));
+    if (codes.length === 0) return;
+    const content = codes.join("\n");
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stock-codes-${filterTab}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       completed: "bg-green-500/20 text-green-400",
@@ -324,6 +337,13 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
             }`}
           >
             错误 ({errorCount})
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={filteredResults.length === 0}
+            className="ml-auto px-3 py-1.5 text-xs font-medium rounded-lg transition-colors bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            导出 ({filteredResults.length})
           </button>
         </div>
       </div>
