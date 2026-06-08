@@ -247,6 +247,7 @@ export default function StockPage() {
                 { label: '收盘', value: displayData.close.toFixed(2), color: '' },
                 { label: '最低', value: displayData.low.toFixed(2), color: 'var(--down-color)' },
                 { label: '涨跌', value: `${displayIsUp ? '+' : ''}${displayChange.toFixed(2)}`, color: displayIsUp ? 'var(--up-color)' : 'var(--down-color)' },
+                { label: '涨幅', value: `${displayIsUp ? '+' : ''}${displayChangePct.toFixed(2)}%`, color: displayIsUp ? 'var(--up-color)' : 'var(--down-color)' },
                 { label: '振幅', value: `${displayAmplitude.toFixed(2)}%`, color: '' },
                 { label: '成交量', value: `${(displayData.volume / 10000).toFixed(2)}万`, color: '' },
                 { label: '成交额', value: formatAmount(displayData.amount ?? 0), color: '' },
