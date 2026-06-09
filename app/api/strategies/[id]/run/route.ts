@@ -202,7 +202,7 @@ async function runStrategy(runId: string) {
   const stockCodes = JSON.parse(run.stockCodes);
   const promptTemplate = run.strategy.prompt.content;
   const criteria = run.strategy.criteria ?? "";
-  const dataConfig = JSON.parse(run.dataConfig ?? '{"open":true,"high":true,"low":false,"close":false,"volume":true}');
+  const dataConfig = JSON.parse(run.dataConfig ?? '{"open":true,"high":false,"low":false,"close":true,"volume":true}');
 
   let waitingResults = await prisma.strategyRunResult.findMany({
     where: { runId, status: "waiting" },
@@ -278,7 +278,7 @@ export async function POST(
       stockCodes: JSON.stringify(stockCodes),
       startDate,
       endDate,
-      dataConfig: JSON.stringify(dataConfig ?? { open: true, high: true, low: false, close: false, volume: true }),
+      dataConfig: JSON.stringify(dataConfig ?? { open: true, high: false, low: false, close: true, volume: true }),
       status: "running",
       startedAt: new Date(),
     },
